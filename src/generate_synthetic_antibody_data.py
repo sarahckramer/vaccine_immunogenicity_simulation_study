@@ -56,4 +56,12 @@ sim_titers = calculate_Ab_titers(tm_start, tm_end, vacc_timepoints, maternal_ant
                                  prop_short, N_pop)
 
 # Plot simulated "data":
-plot_synth_ab_titers(sim_titers, save_path='results/PRELIM_plotTiters_20210104/')
+plot_synth_ab_titers(sim_titers, save_path='results/PRELIM_plotTiters_20210104/',
+                     save_filename='ab_titers_over_time.png')
+
+# Add random noise:
+sim_titers = add_random_noise(sim_titers)
+
+# Plot noise-laden "data":
+plot_synth_ab_titers(sim_titers, save_path='results/PRELIM_plotTiters_20210104/',
+                     save_filename='ab_titers_over_time_NOISE.png')

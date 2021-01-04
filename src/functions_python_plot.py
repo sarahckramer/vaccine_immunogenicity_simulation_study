@@ -3,7 +3,7 @@ import os
 import matplotlib.pyplot as plt
 
 
-def plot_hist_parameter_vals(mat_ab, prop_s, hl_mat, hl_long, hl_short, hl_igg, N, save_path):
+def plot_hist_parameter_vals(mat_ab, prop_s, hl_mat, hl_long, hl_short, hl_igg, N, save_path, save_filename):
     """
     Plots histograms of input parameters to check/explore distributions
 
@@ -15,6 +15,7 @@ def plot_hist_parameter_vals(mat_ab, prop_s, hl_mat, hl_long, hl_short, hl_igg, 
     :param hl_igg: Half-life of IgG antibodies for each participant (1-D array)
     :param N: Size of the synthetic population
     :param save_path: Directory in which to save plot
+    :param save_filename: Name of file to save plot as
     """
 
     # First ensure that save_path exists:
@@ -40,16 +41,17 @@ def plot_hist_parameter_vals(mat_ab, prop_s, hl_mat, hl_long, hl_short, hl_igg, 
             axs[i, j].set_xlabel('Value')
             axs[i, j].set_ylabel('Count')
     fig.tight_layout()
-    plt.savefig(save_path + 'hist_random_effects.png', dpi=300)
+    plt.savefig(save_path + save_filename, dpi=300)
 
 
 # Plot simulated "data":
-def plot_synth_ab_titers(synth_titers, save_path):
+def plot_synth_ab_titers(synth_titers, save_path, save_filename):
     """
     Plots simulated data by participant
 
     :param synth_titers: Generated antibody titers over time (rows) for each participant (columns)
     :param save_path: Directory in which to save plot
+    :param save_filename: Name of file to save plot as
     """
 
     # First ensure that save_path exists:
@@ -63,4 +65,4 @@ def plot_synth_ab_titers(synth_titers, save_path):
     plt.xlabel('Time (Days)')
     plt.ylabel('Ab Titers')
     plt.tight_layout()
-    plt.savefig(save_path + 'ab_titers_over_time.png', dpi=300)
+    plt.savefig(save_path + save_filename, dpi=300)

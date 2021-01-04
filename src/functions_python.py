@@ -88,3 +88,24 @@ def calculate_Ab_titers(t_start, t_end, tau, A_m, beta, d_m, d_a, d_s, d_l, rho,
 
     # Return titers over time:
     return Ab_titers
+
+
+def add_random_noise(synth_titers):
+    """
+    Adds normally-distributed noise to "true" antibody titer values
+
+    :param synth_titers: "True" (synthetic) antibody titers for all timepoints (rows) and individuals (columns)
+    :return: Noise-laden synthetic antibody titers for each timepoint (rows) and individual (columns)
+    """
+
+    # Draw from normal distribution around "true" values:
+    noisy_titers = np.random.normal(loc=synth_titers, scale=0.1*synth_titers)
+
+    # Ensure that no values are <0:
+    neg_indices = np.where(noisy_titers < 0)
+    while len(neg_indices[0] > 0):
+        noisy_titers[neg_indices] = np.random.normal(loc=synth_titers[neg_indices], scale=0.1*synth_titers[neg_indices])
+        neg_indices = np.where(noisy_titers < 0)
+
+    # Return noise-laden values:
+    return noisy_titers
