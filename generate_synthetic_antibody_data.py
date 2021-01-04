@@ -10,8 +10,6 @@ import matplotlib.pyplot as plt
 # Although using the differential equations might make it easier to incorporate effects like age, season of birth, etc.?
 # Also could run using full ODEs and plot out not only Ab titers but also levels of ASCs
 
-# is proportion of short-lived a median? mean?; 2 in generation fxn
-
 #######################################################################################################################
 
 # Set up folders to store any outputs:
@@ -33,7 +31,6 @@ half_life_short_median = 5.5  # days
 half_life_long_median = 1648  # days
 prop_short_median = 0.98
 sd = 0.20
-
 
 #######################################################################################################################
 
@@ -145,7 +142,7 @@ f.close()
 #######################################################################################################################
 
 # Set start, end, and vaccination timepoints:
-tm_start = 1
+tm_start = 0
 tm_end = 730  # 2 years; tm_end = 1825  # 5 years
 vacc_timepoints = np.array([60, 120, 180, 365])  # vaccinate at 2, 4, 6 months, + booster at 12
 
@@ -167,7 +164,6 @@ def calculate_Ab_titers(t_start, t_end, tau, A_m, beta, d_m, d_a, d_s, d_l, rho)
     Ab_titers = np.zeros([len(range(t_start, t_end + 1)), N])
 
     # Loop through each time and calculate:
-    # EVENTUALLY ADJUST SO GOES FROM 0 to t_end-1, not 1 to t_end
     t = t_start
     while t <= t_end:
         maternal_ab = A_m * np.exp(-m * t)
@@ -176,10 +172,7 @@ def calculate_Ab_titers(t_start, t_end, tau, A_m, beta, d_m, d_a, d_s, d_l, rho)
         # add antibody response to each dose that has been given so far
         if t >= min(tau):
             for i in np.where(tau <= t)[0]:
-                # print(i)
-
                 tau_i = tau[i]
-                # print(tau_i)
 
                 vaccine_ab = beta[i] * ((rho / (r - c_s)) *
                                         (np.exp(-c_s * (t - tau_i)) - np.exp(-r * (t - tau_i))) +
@@ -189,7 +182,7 @@ def calculate_Ab_titers(t_start, t_end, tau, A_m, beta, d_m, d_a, d_s, d_l, rho)
 
         # append titers at this timepoint to list
         # Ab_titers.append(A_t)
-        Ab_titers[t - 1] = A_t
+        Ab_titers[t] = A_t
 
         # move forward one day
         t += 1
@@ -202,6 +195,8 @@ def calculate_Ab_titers(t_start, t_end, tau, A_m, beta, d_m, d_a, d_s, d_l, rho)
 sim_titers = calculate_Ab_titers(tm_start, tm_end, vacc_timepoints, maternal_antibodies, betas,
                                  half_life_maternal, half_life_igg, half_life_short, half_life_long,
                                  prop_short)
+
+# Plot simulated "data":
 plt.figure()
 plt.plot(sim_titers)
 plt.yscale('log')
