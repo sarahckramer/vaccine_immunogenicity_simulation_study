@@ -34,6 +34,7 @@ half_life_long_median = 1648  # days
 prop_short_median = 0.98
 sd = 0.20
 
+
 #######################################################################################################################
 
 
@@ -61,9 +62,9 @@ half_life_long = generate_random_effects(half_life_long_median, sd, N)
 prop_short = generate_random_effects(prop_short_median, sd, N, True)
 
 # And get distribution for each value of beta, as well:
-betas = np.zeros([N, len(betas_median)])
+betas = np.zeros([len(betas_median), N])
 for i in range(len(betas_median)):
-    betas[:, i] = generate_random_effects(betas_median[i], sd, N)
+    betas[i] = generate_random_effects(betas_median[i], sd, N)
 # print(np.where(betas == 0))
 
 # Plot histograms to check distributions:
@@ -98,7 +99,7 @@ print(np.median(half_life_short) - half_life_short_median, file=f)
 print(np.median(half_life_long) - half_life_long_median, file=f)
 print(np.median(prop_short) - prop_short_median, file=f)
 for i in range(len(betas_median)):
-    print(np.median(betas[:, i]) - betas_median[i], file=f)
+    print(np.median(betas[i]) - betas_median[i], file=f)
 print(file=f)
 
 print('Diff. between observed and expected medians, relative to expected:', file=f)
@@ -109,7 +110,7 @@ print((np.median(half_life_short) - half_life_short_median) / half_life_short_me
 print((np.median(half_life_long) - half_life_long_median) / half_life_long_median, file=f)
 print((np.median(prop_short) - prop_short_median) / prop_short_median, file=f)
 for i in range(len(betas_median)):
-    print((np.median(betas[:, i]) - betas_median[i]) / betas_median[i], file=f)
+    print((np.median(betas[i]) - betas_median[i]) / betas_median[i], file=f)
 print(file=f)
 
 f.close()
@@ -125,7 +126,7 @@ print(np.std(half_life_short), file=f)
 print(np.std(half_life_long), file=f)
 print(np.std(prop_short), file=f)
 for i in range(len(betas_median)):
-    print(np.std(betas[:, i]), file=f)
+    print(np.std(betas[i]), file=f)
 print(file=f)
 
 print('Observed standard deviations, as proportion of expected median:', file=f)
@@ -136,7 +137,7 @@ print(np.std(half_life_short) / half_life_short_median, file=f)
 print(np.std(half_life_long) / half_life_long_median, file=f)
 print(np.std(prop_short) / prop_short_median, file=f)  # MAKE 20% somehow??
 for i in range(len(betas_median)):
-    print(np.std(betas[:, i]) / betas_median[i], file=f)
+    print(np.std(betas[i]) / betas_median[i], file=f)
 print(file=f)
 
 f.close()
@@ -163,7 +164,7 @@ def calculate_Ab_titers(t_start, t_end, tau, A_m, beta, d_m, d_a, d_s, d_l, rho)
     c_l = get_rate_from_half_life(d_l)
 
     # Store Ab titers at each time point:
-    Ab_titers = np.zeros([N, len(range(t_start, t_end + 1))])
+    Ab_titers = np.zeros([len(range(t_start, t_end + 1)), N])
 
     # Loop through each time and calculate:
     # EVENTUALLY ADJUST SO GOES FROM 0 to t_end-1, not 1 to t_end
@@ -180,16 +181,15 @@ def calculate_Ab_titers(t_start, t_end, tau, A_m, beta, d_m, d_a, d_s, d_l, rho)
                 tau_i = tau[i]
                 # print(tau_i)
 
-                vaccine_ab = beta[:, i] * ((rho / (r - c_s)) *
-                                           (np.exp(-c_s * (t - tau_i)) - np.exp(-r * (t - tau_i))) +
-                                           ((1 - rho) / (r - c_l)) *
-                                           (np.exp(-c_l * (t - tau_i)) - np.exp(-r * (t - tau_i))))
+                vaccine_ab = beta[i] * ((rho / (r - c_s)) *
+                                        (np.exp(-c_s * (t - tau_i)) - np.exp(-r * (t - tau_i))) +
+                                        ((1 - rho) / (r - c_l)) *
+                                        (np.exp(-c_l * (t - tau_i)) - np.exp(-r * (t - tau_i))))
                 A_t = A_t + vaccine_ab
 
         # append titers at this timepoint to list
         # Ab_titers.append(A_t)
-        Ab_titers[:, t - 1] = A_t
-        # MIGHT WANT TO FLIP THIS SO ASSIGNING ROWS, NOT COLS
+        Ab_titers[t - 1] = A_t
 
         # move forward one day
         t += 1
@@ -203,7 +203,7 @@ sim_titers = calculate_Ab_titers(tm_start, tm_end, vacc_timepoints, maternal_ant
                                  half_life_maternal, half_life_igg, half_life_short, half_life_long,
                                  prop_short)
 plt.figure()
-plt.plot(np.transpose(sim_titers))
+plt.plot(sim_titers)
 plt.yscale('log')
 plt.xlabel('Time (Days)')
 plt.ylabel('Ab Titers')
