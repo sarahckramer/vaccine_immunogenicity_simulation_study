@@ -1,5 +1,6 @@
 /.idea/
 /.Rproj.user/
 .Rhistory
+/src/__pycache__/
 /results/
 /notes/
