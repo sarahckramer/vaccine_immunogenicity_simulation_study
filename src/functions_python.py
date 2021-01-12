@@ -163,17 +163,7 @@ def add_random_noise(synth_titers, cv_natural):
     sd = calculate_sigma_from_cv(cv_natural)
 
     # Draw from normal distribution around log of "true" values:
-    # noisy_titers_orig = np.random.normal(loc=synth_titers, scale=0.1*synth_titers)
     noisy_titers = np.random.lognormal(mean=np.log(synth_titers), sigma=sd)
-    # print(np.std(np.reshape((noisy_titers - synth_titers) / synth_titers, [731000, ])))
-    # print(np.std(np.reshape((noisy_titers_orig - synth_titers) / synth_titers, [731000, ])))
-
-    # # Ensure that no values are <0:
-    # neg_indices = np.where(noisy_titers < 0)
-    # while len(neg_indices[0] > 0):
-    #     # noisy_titers[neg_indices] = np.random.normal(loc=synth_titers[neg_indices], scale=0.1*synth_titers[neg_indices])
-    #     noisy_titers[neg_indices] = np.random.lognormal(mean=np.log(synth_titers[neg_indices]), sigma=sd)
-    #     neg_indices = np.where(noisy_titers < 0)
 
     # Return noise-laden values:
     return noisy_titers

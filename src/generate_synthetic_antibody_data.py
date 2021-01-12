@@ -14,7 +14,6 @@ prop_short = np.float64(0.95)  # fit this as fixed for now
 # Set parameter medians:
 maternal_antibodies_median = 0.2
 betas_median = np.array([10.0])  # single dose for now
-# betas_median = np.array([0.035, 0.2, 1.0, 10.0])
 half_life_maternal_median = 46.0  # days
 half_life_short_median = 30.0  # days
 half_life_long_median = 365.0  # days
@@ -24,8 +23,7 @@ sd = calculate_sigma_from_cv(0.1)
 
 # Set start, end, and vaccination timepoints:
 tm_start = 0
-tm_end = 730  # 2 years; tm_end = 1825  # 5 years
-# vacc_timepoints = np.array([60, 120, 180, 365])  # vaccinate at 2, 4, 6 months, + booster at 12
+tm_end = 730  # 2 years
 vacc_timepoints = np.array([365])  # vaccinate between 12 and 15 months; can be second dose at 4-6 yrs
 
 #######################################################################################################################
@@ -55,6 +53,7 @@ betas = np.zeros([len(betas_median), N_pop])
 for i in range(len(betas_median)):
     betas[i] = generate_random_effects(betas_median[i], sd, N_pop)
     print(np.std(betas[i]) / np.mean(betas[i]))  # check sd
+
 #######################################################################################################################
 
 # Run!
