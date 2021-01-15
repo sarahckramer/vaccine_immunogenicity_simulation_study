@@ -9,6 +9,7 @@ from functions_python_plot import *
 
 # Set global parameters:
 N_pop = 1000  # number of "participants"
+response_delay = 14  # 2 week delay in Ab response
 prop_short = np.float64(0.70)  # fit this as fixed for now
 
 # Set parameter medians:
@@ -23,7 +24,7 @@ sd = calculate_sigma_from_cv(0.1)
 
 # Set start, end, and vaccination timepoints:
 tm_start = 0
-tm_end = 3652  # 730  # 2 years
+tm_end = 3652  # 730  # 10 years
 vacc_timepoints = np.array([365])  # vaccinate between 12 and 15 months; can be second dose at 4-6 yrs
 
 #######################################################################################################################
@@ -60,14 +61,14 @@ for i in range(len(betas_median)):
 # Run!
 sim_titers = calculate_Ab_titers_biexp(tm_start, tm_end, vacc_timepoints, maternal_antibodies, betas,
                                        half_life_maternal, half_life_short, half_life_long, prop_short,
-                                       N_pop)
+                                       N_pop, response_delay)
 
 # # Plot:
 # plt.figure(figsize=(20, 9))
 # plt.plot(sim_titers)
 # # plt.yscale('log')
 # plt.hlines(y=(10, 5), xmin=tm_start, xmax=tm_end)
-# plt.vlines(x=(60, 120, 180, 548, 730, 1095, 2191), ymin=0, ymax=50)  # 2/4/6mo; 6m, 1y, 2y, 5y post vaccination
+# plt.vlines(x=(60, 120, 180, 548, 730, 1095, 2191), ymin=0, ymax=30)  # 2/4/6mo; 6m, 1y, 2y, 5y post vaccination
 # plt.tight_layout()
 
 # # Check for realism:
@@ -80,13 +81,13 @@ sim_titers = calculate_Ab_titers_biexp(tm_start, tm_end, vacc_timepoints, matern
 # # Difficult to tell what's "realistic," as there seems to be a lot of boosting from natural exposure in the literature
 
 # # Plot simulated "data":
-# plot_synth_ab_titers(sim_titers, save_path='results/PRELIM_plotTiters_20210113/',
-#                      save_filename='ab_titers_alpha' + str(maternal_antibodies_median) +
-#                                    '_m' + str(half_life_maternal_median) +
-#                                    '_beta' + str(betas_median) +
-#                                    '_r1' + str(half_life_short_median) +
-#                                    '_r2' + str(half_life_long_median) +
-#                                    '_rho' + str(prop_short) + '.png')
+# # plot_synth_ab_titers(sim_titers, save_path='results/PRELIM_plotTiters_20210113/',
+# #                      save_filename='ab_titers_alpha' + str(maternal_antibodies_median) +
+# #                                    '_m' + str(half_life_maternal_median) +
+# #                                    '_beta' + str(betas_median) +
+# #                                    '_r1' + str(half_life_short_median) +
+# #                                    '_r2' + str(half_life_long_median) +
+# #                                    '_rho' + str(prop_short) + '.png')
 # plot_synth_ab_titers(sim_titers, save_path='results/PRELIM_plotTiters_20210115/',
 #                      save_filename='ab_titers_over_time.png')
 

@@ -44,7 +44,7 @@ def calculate_sigma_from_cv(desired_cv):
     return sigma
 
 
-def calculate_Ab_titers_biexp(t_start, t_end, tau, alpha, beta, d_m, d_s, d_l, rho, N):
+def calculate_Ab_titers_biexp(t_start, t_end, tau, alpha, beta, d_m, d_s, d_l, rho, N, delay):
     """
     Calculates synthetic antibody titers at each time point for each participant according to a non-mechanistic
     model accounting for biexponential antibody decay rates
@@ -59,12 +59,16 @@ def calculate_Ab_titers_biexp(t_start, t_end, tau, alpha, beta, d_m, d_s, d_l, r
     :param d_l: Half-life of IgG antibodies for each participant ("long-lived") (1-D array)
     :param rho: Proportion of antibodies decaying at rate d_s (1-D array OR float64)
     :param N: Size of the synthetic population
+    :param delay: Duration of delay between vaccination and antibody response
     :return: Antibody titers for each time point (rows) and participant (columns)
     """
     # Start by calculating rates of decay from half-lives:
     m = get_rate_from_half_life(d_m)
     r1 = get_rate_from_half_life(d_s)
     r2 = get_rate_from_half_life(d_l)
+
+    # Account for delay in antibody response to vaccination:
+    tau = tau + delay
 
     # Store Ab titers at each time point:
     Ab_titers = np.zeros([len(range(t_start, t_end + 1)), N])
