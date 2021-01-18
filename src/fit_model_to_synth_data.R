@@ -12,6 +12,14 @@ library(nlme)
 library(ggplot2)
 library(gridExtra)
 
+# Set number of data points/subjects:
+n_participants <- 50 # 50, 100, 250, 500, 1000
+sample_interval <- 1 # 1-4; selecting from list below
+select_timepoints <- list(c(seq(0, 360, by = 30), 379, seq(379+21, 1090, by = 30)),
+                          c(seq(0, 360, by = 60), 379, seq(379+51, 1090, by = 60)),
+                          c(0, 180, 360, 379, 550, 730, 1095),
+                          c(0, 360, 379, 730, 1095, 2190))
+
 # Set seed so that same 100 subjects chosen each time:
 set.seed(3970395)
 
@@ -26,13 +34,12 @@ ab_titers <- melt(ab_titers, id.vars = 'time')
 names(ab_titers)[2] <- 'subject'
 
 # Select subset of subjects?:
-ab_titers <- ab_titers[ab_titers$subject %in% levels(ab_titers$subject)[sample(1:1000, 100)], ]
+ab_titers <- ab_titers[ab_titers$subject %in% levels(ab_titers$subject)[sample(1:1000, n_participants)], ]
 ab_titers$subject <- factor(ab_titers$subject)
 
 # Select key timepoints:
-ab_titers_ORIG <- ab_titers # store "full" data
-ab_titers <- ab_titers_ORIG[ab_titers_ORIG$time %in% c(seq(0, 360, by = 30), 379, seq(390, 720, by = 30)), ]
-# ab_titers <- ab_titers_ORIG[ab_titers_ORIG$time %in% c(seq(0, 360, by = 30), 379, seq(390, 3650, by = 30)), ] # allows nlsList to converge
+ab_titers <- ab_titers[ab_titers$time %in% select_timepoints[[sample_interval]], ]
+# need at least 2 points pre-vaccine, at least 4 post?
 
 # Plot data:
 p1 <- ggplot(data = ab_titers, aes(x = time, y = value, color = subject)) + geom_line() + geom_point() +
@@ -43,8 +50,8 @@ p1 <- ggplot(data = ab_titers, aes(x = time, y = value, color = subject)) + geom
 print(p1)
 
 # Read in functions:
-source('functions_ab_titers_over_time.R')
-source('functions_assess_output.R')
+source('src/functions_ab_titers_over_time.R')
+source('src/functions_assess_output.R')
 
 # First fit without random effects:
 m1 <- nls(log(value) ~ calculate_ab_titers_LOG(time, log_alpha, log_m, log_beta, logit_rho, log_r_1, log_r_2),
@@ -61,19 +68,9 @@ m2 <- nlsList(log(value) ~ calculate_ab_titers_LOG(time, log_alpha, log_m, log_b
 plot(intervals(m2)) # almost half not fit, but m seems most variable based on this plot; also alpha and beta
 # plot(m2, subject ~ resid(.), abline = 0 )
 pairs(m2)
-# warnings for almost half of them! this seems mostly fixed by setting r2 constant, or else using a longer timeframe for data
 
 # Fit nlme:
-# m3 <- nlme(log(value) ~ calculate_ab_titers_LOG(time, log_alpha, log_m, log_beta, logit_rho, log_r_1, log_r_2),
-#            data = ab_titers,
-#            fixed = log_alpha + log_m + log_beta + logit_rho + log_r_1 + log_r_2 ~ 1,
-#            random = log_alpha + log_m + log_beta + log_r_1 + log_r_2 ~ 1,
-#            groups = ~subject,
-#            start = c(log_alpha = log(5.0), log_m = log(log(2)/30), log_beta = log(18.0), logit_rho = logit(0.75),
-#                      log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
-# # might be able to get estimates if allowed to run for several hours, but iterations seem not to converge quite often anyway
-
-m4 <- nlme(log(value) ~ calculate_ab_titers_LOG(time, log_alpha, log_m, log_beta, logit_rho, log_r_1, log_r_2),
+m3 <- nlme(log(value) ~ calculate_ab_titers_LOG(time, log_alpha, log_m, log_beta, logit_rho, log_r_1, log_r_2),
            data = ab_titers,
            fixed = log_alpha + log_m + log_beta + logit_rho + log_r_1 + log_r_2 ~ 1,
            random = pdDiag(log_alpha + log_m + log_beta + log_r_1 + log_r_2 ~ 1),
@@ -81,25 +78,28 @@ m4 <- nlme(log(value) ~ calculate_ab_titers_LOG(time, log_alpha, log_m, log_beta
            start = c(log_alpha = log(5.0), log_m = log(log(2)/30), log_beta = log(18.0), logit_rho = logit(0.75),
                      log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
 # however, making small change to how random effects are specified allows fitting!
-# won't converge anymore if every 60 days instead of every 30 days; have to remove r1 and r2, or m and r2 (keeping m seems more important; r_1 and beta seem correlated)
-plot(m4)
-pairs(m4) # no obvious strong correlations
-qqnorm(m4, abline = c(0, 1))
-qqnorm(m4, ~ ranef(.))
-viz_model_fit(m4, ab_titers, logscale = TRUE)
+plot(m3) # evidence of some increase in variance with values higher than about 1.5
+pairs(m3) # r_1 and r_2 might be correlated - explore whether both random effects are needed
+qqnorm(m3, abline = c(0, 1))
+qqnorm(m3, ~ ranef(.))
+viz_model_fit(m3, ab_titers, logscale = TRUE)
 
 # Try to account for any correlation structure?:
-plot(ACF(m4, maxLag = 10), alpha = 0.05) # seems to be some autocorrelation?
-m5 <- update(m4, correlation = corAR1(abs(ACF(m4)[2, 2])))
-anova(m4, m5) # doesn't significantly improve fit
-# viz_model_fit(m5, ab_titers, logscale = TRUE)
-rm(m5)
+plot(ACF(m3, maxLag = 10), alpha = 0.05) # seems to be some autocorrelation?
+m4 <- update(m3, correlation = corAR1(abs(ACF(m3)[2, 2])))
+anova(m3, m4) # doesn't significantly improve fit
+# viz_model_fit(m4, ab_titers, logscale = TRUE)
+rm(m4)
 
 # Now extract parameter fits and random effect sds:
-results.df <- get_param_est(m4)
+results.df <- get_param_est(m3)
 print(results.df)
 
+if (!dir.exists('results/PRELIM_nlme_res_20210118/')) {
+  dir.create('results/PRELIM_nlme_res_20210118/')
+}
 
+write.csv(results.df, file = paste0('results/PRELIM_nlme_res_20210118/res_n', n_participants, '_t', sample_interval, '.csv'), row.names = FALSE)
 
-
-
+# Clean up:
+rm(list = ls())
