@@ -56,6 +56,9 @@ get_param_est <- function(m) {
   res.df$sd_random <- NA
   res.df$sd_random[c(1:3, 5:6)] <- res.sd
   
+  # Correct rownames to no longer say "log":
+  rownames(res.df) <- c('alpha', 'm', 'beta', 'rho', 'r_1', 'r_2')
+  
   # Return results:
   return(res.df)
 }
