@@ -20,7 +20,7 @@ select_timepoints <- list(c(seq(0, 360, by = 30), 379, seq(379+21, 1090, by = 30
                           c(0, 180, 360, 379, 550, 730, 1095),
                           c(0, 360, 379, 730, 1095, 2190))
 
-# Set seed so that same 100 subjects chosen each time:
+# Set seed so that same subjects chosen each time:
 set.seed(3970395)
 
 # Read in noise-laden "data":
@@ -77,19 +77,31 @@ m3 <- nlme(log(value) ~ calculate_ab_titers_LOG(time, log_alpha, log_m, log_beta
            groups = ~subject,
            start = c(log_alpha = log(5.0), log_m = log(log(2)/30), log_beta = log(18.0), logit_rho = logit(0.75),
                      log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
-# however, making small change to how random effects are specified allows fitting!
 plot(m3) # evidence of some increase in variance with values higher than about 1.5
-pairs(m3) # r_1 and r_2 might be correlated - explore whether both random effects are needed
-qqnorm(m3, abline = c(0, 1))
+plot(m3, resid(.) ~ log(value), abline = 0)
+plot(m3, resid(.) ~ time, abline = 0)
+pairs(m3) # r_1 and r_2 might be correlated (moreso when more data points) - explore whether both random effects are needed
+qqnorm(m3, abline = c(0, 1)) # looks better when more data points are included
 qqnorm(m3, ~ ranef(.))
-viz_model_fit(m3, ab_titers, logscale = TRUE)
+# viz_model_fit(m3, ab_titers, logscale = TRUE)
+
+# Do we need random effect of r2?
+m4 <- update(m3, random = pdDiag(log_alpha + log_m + log_beta + log_r_1 ~ 1))
+anova(m3, m4)
+rm(m4)
 
 # Try to account for any correlation structure?:
 plot(ACF(m3, maxLag = 10), alpha = 0.05) # seems to be some autocorrelation?
 m4 <- update(m3, correlation = corAR1(abs(ACF(m3)[2, 2])))
-anova(m3, m4) # doesn't significantly improve fit
+anova(m3, m4) # doesn't significantly improve fit (close for 250/2)
 # viz_model_fit(m4, ab_titers, logscale = TRUE)
 rm(m4)
+
+# What about variance functions?:
+m4 <- update(m3, weights = varPower(form = ~log(value)))
+anova(m3, m4)
+plot(m4, resid(.) ~ log(value), abline = 0)
+# seems to improve for some (more likely to make a difference when more timepoints/participants), but don't see much visual evidence
 
 # Now extract parameter fits and random effect sds:
 results.df <- get_param_est(m3)
@@ -103,3 +115,4 @@ write.csv(results.df, file = paste0('results/PRELIM_nlme_res_20210118/res_n', n_
 
 # Clean up:
 rm(list = ls())
+dev.off()
