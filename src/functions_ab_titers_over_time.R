@@ -21,6 +21,9 @@ calculate_ab_titers_LOG <- function(time, log_alpha, log_m, log_beta, logit_rho,
   v1 <- alpha * exp(-m * time)
   v2 <- alpha * exp(-m * time) + beta * (rho * exp(-r_1 * (time - (365 + 14))) + (1 - rho) * exp(-r_2 * (time - (365 + 14))))
   value <- v1 * (time < (365 + 14)) + v2 * (time >= (365 + 14))
+  
+  # value[is.na(value)] <- 1e-16 # ? Seems necessary for saemix, but impairs nlme
+  
   return(log(value))
 }
 
