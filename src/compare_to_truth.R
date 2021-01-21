@@ -34,7 +34,7 @@ param_est$truth <- NA
 param_est$truth[param_est$param == 'alpha'] <- 8.0
 param_est$truth[param_est$param == 'm'] <- 42.0
 param_est$truth[param_est$param == 'beta'] <- 18.0
-param_est$truth[param_est$param == 'rho'] <- 0.75
+param_est$truth[param_est$param == 'rho'] <- 0.70
 param_est$truth[param_est$param == 'r1'] <- 30.0
 param_est$truth[param_est$param == 'r2'] <- 3650.0
 
