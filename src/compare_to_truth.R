@@ -24,6 +24,8 @@ rm(i, j, dat, filename)
 
 # Format results:
 param_est$param <- factor(param_est$param)
+param_est$interval <- factor(param_est$interval)
+levels(param_est$interval) <- c('30 Days', '60 Days', '120 Days', 'Realistic')
 
 # Specify true values:
 sd_truth <- 0.10
