@@ -77,6 +77,7 @@ m3 <- nlme(log(value) ~ calculate_ab_titers_LOG(time, log_alpha, log_m, log_beta
            groups = ~subject,
            start = c(log_alpha = log(5.0), log_m = log(log(2)/30), log_beta = log(18.0), logit_rho = logit(0.75),
                      log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
+m3.alt <- nlme(m2, random = pdDiag(log_alpha + log_m + log_beta + log_r_1 + log_r_2 ~ 1)) # fit is very similar
 plot(m3) # evidence of some increase in variance with values higher than about 1.5
 plot(m3, resid(.) ~ log(value), abline = 0)
 plot(m3, resid(.) ~ time, abline = 0)
