@@ -120,17 +120,15 @@ print(results.df)
 # ab_mix <- saemixData(name.data = ab_titers, name.group = 'subject', name.predictors = 'time', name.response = 'log_value', units = list(x = 'time', y = 'log_value'))
 # ab_mod <- function(psi, id, xidep) {
 #   time <- xidep[, 1]
-#   
+# 
 #   log_alpha <- psi[id, 1]
 #   log_m <- psi[id, 2]
 #   log_beta <- psi[id, 3]
 #   logit_rho <- logit(psi[id, 4])
 #   log_r_1 <- psi[id, 5]
 #   log_r_2 <- psi[id, 6]
-#   
+# 
 #   log_value <- calculate_ab_titers_LOG(time, log_alpha, log_m, log_beta, logit_rho, log_r_1, log_r_2)
-#   # log_value[is.na(log_value)] <- 0 # otherwise can't find starting value b/c estimates seem to go negative/NA?
-#   # might be best to actually do this within the calculate_ab_titer_LOG fxn, before log is calculated
 #   return(log_value)
 # }
 # saemix_model <- saemixModel(model = ab_mod,
