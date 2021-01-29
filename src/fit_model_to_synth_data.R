@@ -56,14 +56,14 @@ source('src/functions_assess_output.R')
 # First fit without random effects:
 m1 <- nls(log(value) ~ calculate_ab_titers_LOG(time, log_alpha, log_m, log_beta, logit_rho, log_r_1, log_r_2),
           data = ab_titers,
-          start = c(log_alpha = log(5.0), log_m = log(log(2)/30), log_beta = log(18.0), logit_rho = logit(0.75),
+          start = c(log_alpha = log(5.0), log_m = log(log(2)/30), log_beta = log(18.0), logit_rho = qlogis(0.75),
                     log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
 summary(m1)
 
 # Next try nlsList (separate fits for each person):
 m2 <- nlsList(log(value) ~ calculate_ab_titers_LOG(time, log_alpha, log_m, log_beta, logit_rho, log_r_1, log_r_2) | subject,
               data = ab_titers,
-              start = c(log_alpha = log(5.0), log_m = log(log(2)/30), log_beta = log(18.0), logit_rho = logit(0.75),
+              start = c(log_alpha = log(5.0), log_m = log(log(2)/30), log_beta = log(18.0), logit_rho = qlogis(0.75),
                         log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
 plot(intervals(m2)) # almost half not fit, but m seems most variable based on this plot; also alpha and beta
 # plot(m2, subject ~ resid(.), abline = 0 )
@@ -75,7 +75,7 @@ m3 <- nlme(log(value) ~ calculate_ab_titers_LOG(time, log_alpha, log_m, log_beta
            fixed = log_alpha + log_m + log_beta + logit_rho + log_r_1 + log_r_2 ~ 1,
            random = pdDiag(log_alpha + log_m + log_beta + log_r_1 + log_r_2 ~ 1),
            groups = ~subject,
-           start = c(log_alpha = log(5.0), log_m = log(log(2)/30), log_beta = log(18.0), logit_rho = logit(0.75),
+           start = c(log_alpha = log(5.0), log_m = log(log(2)/30), log_beta = log(18.0), logit_rho = qlogis(0.75),
                      log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
 m3.alt <- nlme(m2, random = pdDiag(log_alpha + log_m + log_beta + log_r_1 + log_r_2 ~ 1)) # fit is very similar
 plot(m3.alt) # evidence of some increase in variance with values higher than about 1.5
@@ -124,7 +124,7 @@ print(results.df)
 #   log_alpha <- psi[id, 1]
 #   log_m <- psi[id, 2]
 #   log_beta <- psi[id, 3]
-#   logit_rho <- logit(psi[id, 4])
+#   logit_rho <- qlogis(psi[id, 4])
 #   log_r_1 <- psi[id, 5]
 #   log_r_2 <- psi[id, 6]
 # 
@@ -160,7 +160,7 @@ print(results.df)
 # prior_1 <- c(set_prior("normal(log(8.0), 0.1)", nlpar = 'logalpha'),
 #              set_prior("normal(log(log(2)/42), 0.1)", nlpar = 'logm'),
 #              set_prior("normal(log(18.0), 0.1)", nlpar = 'logbeta'),
-#              set_prior("normal(logit(0.75), 0.05)", nlpar = 'logitrho'),
+#              set_prior("normal(qlogis(0.75), 0.05)", nlpar = 'logitrho'),
 #              set_prior("normal(log(log(2)/30), 0.1)", nlpar = 'logr1'),
 #              set_prior("normal(log(log(2)/3650), 0.1)", nlpar = 'logr2'))
 # form = bf(f1, nl = TRUE) + list(logitrho~1, logalpha~(1|2|subject), logm~(1|2|subject),

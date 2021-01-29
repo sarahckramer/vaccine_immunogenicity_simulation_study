@@ -48,11 +48,11 @@ get_param_est <- function(m) {
   # Calculate confidence intervals for fixed effects (use delta method):
   res.df$lower <- res.df$Value - 1.96 * res.df$Value * res.df$Std.Error
   res.df$upper <- res.df$Value + 1.96 * res.df$Value * res.df$Std.Error
-  res.df$lower[4] <- exp(res.df[4, 1]) / (exp(res.df[4, 1]) + 1) - 1.96 * (exp(res.df[4, 1]) / (exp(res.df[4, 1]) + 1)**2) * res.df[4, 2]
-  res.df$upper[4] <- exp(res.df[4, 1]) / (exp(res.df[4, 1]) + 1) + 1.96 * (exp(res.df[4, 1]) / (exp(res.df[4, 1]) + 1)**2) * res.df[4, 2]
+  res.df$lower[4] <- plogis(res.df[4, 1]) - 1.96 * (exp(res.df[4, 1]) / (exp(res.df[4, 1]) + 1)**2) * res.df[4, 2]
+  res.df$upper[4] <- plogis(res.df[4, 1]) + 1.96 * (exp(res.df[4, 1]) / (exp(res.df[4, 1]) + 1)**2) * res.df[4, 2]
   
   # And convert rho back to natural scale:
-  res.df[4, 1] <- exp(res.df[4, 1]) / (exp(res.df[4, 1]) + 1) # inverse logit of rho
+  res.df[4, 1] <- plogis(res.df[4, 1]) # inverse logit of rho
   
   # Remove standard errors:
   res.df <- res.df[, c(1, 3:4)]
