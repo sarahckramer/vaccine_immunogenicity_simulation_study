@@ -44,7 +44,6 @@ get_param_est <- function(m) {
   
   # Convert point estimates to scale of interest:
   res.df[c(1:3, 5:6), 1] <- exp(res.df[c(1:3, 5:6), 1]) # exponentiate all except rho
-  res.df[5, 1] <- res.df[5, 1] + res.df[6, 1] # although we fit r1+r2, the original model was run using short- and long-term decay rates
   
   # Calculate confidence intervals for fixed effects (use delta method):
   res.df$lower <- res.df$Value - 1.96 * res.df$Value * res.df$Std.Error
@@ -57,10 +56,6 @@ get_param_est <- function(m) {
   
   # Remove standard errors:
   res.df <- res.df[, c(1, 3:4)]
-  
-  # Convert rates to half lives:
-  res.df[c(2, 5:6), ] <- log(2) / res.df[c(2, 5:6), ] # convert rates to half-lives
-  res.df[c(2, 5:6), 2:3] <- res.df[c(2, 5:6), 3:2] # correct upper and lower bounds for half-lives
   
   # Add in st. dev. of random effects:
   res.df$sd_random <- NA
