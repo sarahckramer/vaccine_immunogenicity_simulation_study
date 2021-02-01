@@ -41,13 +41,13 @@ ab_titers$subject <- factor(ab_titers$subject)
 ab_titers <- ab_titers[ab_titers$time %in% select_timepoints[[sample_interval]], ]
 # need at least 2 points pre-vaccine, at least 4 post?
 
-# Plot data:
-p1 <- ggplot(data = ab_titers, aes(x = time, y = value, color = subject)) + geom_line() + geom_point() +
-  geom_vline(xintercept = 365, lty = 2) +
-  theme_classic() + theme(legend.position = 'None') + labs(x = 'Time (Days)', y = 'Ab Titers') +
-  scale_x_continuous(breaks = seq(0, max(ab_titers$time), by = 30)) +
-  scale_y_continuous(breaks = seq(0, max(ab_titers$value), by = 1.0))#, trans = 'log')
-print(p1)
+# # Plot data:
+# p1 <- ggplot(data = ab_titers, aes(x = time, y = value, color = subject)) + geom_line() + geom_point() +
+#   geom_vline(xintercept = 365, lty = 2) +
+#   theme_classic() + theme(legend.position = 'None') + labs(x = 'Time (Days)', y = 'Ab Titers') +
+#   scale_x_continuous(breaks = seq(0, max(ab_titers$time), by = 30)) +
+#   scale_y_continuous(breaks = seq(0, max(ab_titers$value), by = 1.0))#, trans = 'log')
+# print(p1)
 
 # Read in functions:
 source('src/functions_ab_titers_over_time.R')
@@ -56,14 +56,14 @@ source('src/functions_assess_output.R')
 # First fit without random effects:
 m1 <- nls(log(value) ~ calculate_ab_titers_LOG(time, log_alpha, log_m, log_beta, logit_rho, log_r_1, log_r_2),
           data = ab_titers,
-          start = c(log_alpha = log(5.0), log_m = log(log(2)/30), log_beta = log(18.0), logit_rho = logit(0.75),
+          start = c(log_alpha = log(5.0), log_m = log(log(2)/30), log_beta = log(18.0), logit_rho = qlogis(0.75),
                     log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
-plot(m1)
+summary(m1)
 
 # Next try nlsList (separate fits for each person):
 m2 <- nlsList(log(value) ~ calculate_ab_titers_LOG(time, log_alpha, log_m, log_beta, logit_rho, log_r_1, log_r_2) | subject,
               data = ab_titers,
-              start = c(log_alpha = log(5.0), log_m = log(log(2)/30), log_beta = log(18.0), logit_rho = logit(0.75),
+              start = c(log_alpha = log(5.0), log_m = log(log(2)/30), log_beta = log(18.0), logit_rho = qlogis(0.75),
                         log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
 plot(intervals(m2)) # almost half not fit, but m seems most variable based on this plot; also alpha and beta
 # plot(m2, subject ~ resid(.), abline = 0 )
@@ -75,43 +75,44 @@ m3 <- nlme(log(value) ~ calculate_ab_titers_LOG(time, log_alpha, log_m, log_beta
            fixed = log_alpha + log_m + log_beta + logit_rho + log_r_1 + log_r_2 ~ 1,
            random = pdDiag(log_alpha + log_m + log_beta + log_r_1 + log_r_2 ~ 1),
            groups = ~subject,
-           start = c(log_alpha = log(5.0), log_m = log(log(2)/30), log_beta = log(18.0), logit_rho = logit(0.75),
+           start = c(log_alpha = log(5.0), log_m = log(log(2)/30), log_beta = log(18.0), logit_rho = qlogis(0.75),
                      log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
-plot(m3) # evidence of some increase in variance with values higher than about 1.5
-plot(m3, resid(.) ~ log(value), abline = 0)
-plot(m3, resid(.) ~ time, abline = 0)
-pairs(m3) # r_1 and r_2 might be correlated (moreso when more data points) - explore whether both random effects are needed
-qqnorm(m3, abline = c(0, 1)) # looks better when more data points are included
-qqnorm(m3, ~ ranef(.))
+m3.alt <- nlme(m2, random = pdDiag(log_alpha + log_m + log_beta + log_r_1 + log_r_2 ~ 1)) # fit is very similar
+plot(m3.alt) # evidence of some increase in variance with values higher than about 1.5
+# plot(m3, resid(.) ~ log(value), abline = 0)
+# plot(m3, resid(.) ~ time, abline = 0)
+pairs(m3.alt) # r_1 and r_2 might be correlated (moreso when more data points) - explore whether both random effects are needed
+qqnorm(m3.alt, abline = c(0, 1)) # looks better when more data points are included
+# qqnorm(m3, ~ ranef(.))
 # viz_model_fit(m3, ab_titers, logscale = TRUE)
 
 # Do we need random effect of r2?
-m4 <- update(m3, random = pdDiag(log_alpha + log_m + log_beta + log_r_1 ~ 1))
-anova(m3, m4)
+m4 <- update(m3.alt, random = pdDiag(log_alpha + log_m + log_beta + log_r_1 ~ 1))
+anova(m3.alt, m4)
 rm(m4)
 
-# Try to account for any correlation structure?:
-plot(ACF(m3, maxLag = 10), alpha = 0.05) # seems to be some autocorrelation?
-m4 <- update(m3, correlation = corAR1(abs(ACF(m3)[2, 2])))
-anova(m3, m4) # doesn't significantly improve fit (close for 250/2)
-# viz_model_fit(m4, ab_titers, logscale = TRUE)
-rm(m4)
-
-# What about variance functions?:
-m4 <- update(m3, weights = varPower(form = ~log(value)))
-anova(m3, m4)
-plot(m4, resid(.) ~ log(value), abline = 0)
-# seems to improve for some (more likely to make a difference when more timepoints/participants), but don't see much visual evidence
+# # Try to account for any correlation structure?:
+# plot(ACF(m3, maxLag = 10), alpha = 0.05) # seems to be some autocorrelation?
+# m4 <- update(m3, correlation = corAR1(abs(ACF(m3)[2, 2])))
+# anova(m3, m4) # doesn't significantly improve fit (close for 250/2)
+# # viz_model_fit(m4, ab_titers, logscale = TRUE)
+# rm(m4)
+# 
+# # What about variance functions?:
+# m4 <- update(m3, weights = varPower(form = ~log(value)))
+# anova(m3, m4)
+# plot(m4, resid(.) ~ log(value), abline = 0)
+# # seems to improve for some (more likely to make a difference when more timepoints/participants), but don't see much visual evidence
 
 # Now extract parameter fits and random effect sds:
-results.df <- get_param_est(m3)
+results.df <- get_param_est(m3.alt)
 print(results.df)
 
-# if (!dir.exists('results/PRELIM_nlme_res_20210118/')) {
-#   dir.create('results/PRELIM_nlme_res_20210118/')
+# if (!dir.exists('results/PRELIM_nlme_res_20210129/')) {
+#   dir.create('results/PRELIM_nlme_res_20210129/')
 # }
 # 
-# write.csv(results.df, file = paste0('results/PRELIM_nlme_res_20210118/res_n', n_participants, '_t', sample_interval, '.csv'), row.names = FALSE)
+# write.csv(results.df, file = paste0('results/PRELIM_nlme_res_20210129/res_n', n_participants, '_t', sample_interval, '.csv'), row.names = FALSE)
 
 # # saemix?:
 # ab_titers$log_value <- log(ab_titers$value)
@@ -119,17 +120,15 @@ print(results.df)
 # ab_mix <- saemixData(name.data = ab_titers, name.group = 'subject', name.predictors = 'time', name.response = 'log_value', units = list(x = 'time', y = 'log_value'))
 # ab_mod <- function(psi, id, xidep) {
 #   time <- xidep[, 1]
-#   
+# 
 #   log_alpha <- psi[id, 1]
 #   log_m <- psi[id, 2]
 #   log_beta <- psi[id, 3]
-#   logit_rho <- logit(psi[id, 4])
+#   logit_rho <- qlogis(psi[id, 4])
 #   log_r_1 <- psi[id, 5]
 #   log_r_2 <- psi[id, 6]
-#   
+# 
 #   log_value <- calculate_ab_titers_LOG(time, log_alpha, log_m, log_beta, logit_rho, log_r_1, log_r_2)
-#   # log_value[is.na(log_value)] <- 0 # otherwise can't find starting value b/c estimates seem to go negative/NA?
-#   # might be best to actually do this within the calculate_ab_titer_LOG fxn, before log is calculated
 #   return(log_value)
 # }
 # saemix_model <- saemixModel(model = ab_mod,
@@ -161,7 +160,7 @@ print(results.df)
 # prior_1 <- c(set_prior("normal(log(8.0), 0.1)", nlpar = 'logalpha'),
 #              set_prior("normal(log(log(2)/42), 0.1)", nlpar = 'logm'),
 #              set_prior("normal(log(18.0), 0.1)", nlpar = 'logbeta'),
-#              set_prior("normal(logit(0.75), 0.05)", nlpar = 'logitrho'),
+#              set_prior("normal(qlogis(0.75), 0.05)", nlpar = 'logitrho'),
 #              set_prior("normal(log(log(2)/30), 0.1)", nlpar = 'logr1'),
 #              set_prior("normal(log(log(2)/3650), 0.1)", nlpar = 'logr2'))
 # form = bf(f1, nl = TRUE) + list(logitrho~1, logalpha~(1|2|subject), logm~(1|2|subject),

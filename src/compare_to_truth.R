@@ -9,7 +9,7 @@ param_est <- NULL
 for (i in n_participants) {
   for (j in timepoint_intervals) {
     
-    filename <- paste0('results/PRELIM_nlme_res_20210118/res_n', i,'_t', j, '.csv')
+    filename <- paste0('results/PRELIM_nlme_res_20210129/res_n', i,'_t', j, '.csv')
     if (file.exists(filename)) {
       dat <- read.csv(filename)
       dat$param <- c('alpha', 'm', 'beta', 'rho', 'r1', 'r2')
@@ -32,11 +32,11 @@ sd_truth <- 0.10
 param_est$truth <- NA
 
 param_est$truth[param_est$param == 'alpha'] <- 8.0
-param_est$truth[param_est$param == 'm'] <- 42.0
+param_est$truth[param_est$param == 'm'] <- log(2)/42.0
 param_est$truth[param_est$param == 'beta'] <- 18.0
 param_est$truth[param_est$param == 'rho'] <- 0.70
-param_est$truth[param_est$param == 'r1'] <- 30.0
-param_est$truth[param_est$param == 'r2'] <- 3650.0
+param_est$truth[param_est$param == 'r1'] <- log(2)/30.0 - log(2)/3650.0
+param_est$truth[param_est$param == 'r2'] <- log(2)/3650.0
 
 # Calculate absolute and relative errors (parameter values):
 param_est$abs_err_val <- param_est$Value - param_est$truth
