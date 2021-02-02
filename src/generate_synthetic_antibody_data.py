@@ -7,6 +7,9 @@ from functions_python_plot import *
 
 #######################################################################################################################
 
+# Set date:
+ymd = '20210202'
+
 # Set global parameters:
 N_pop = 1000  # number of "participants"
 response_delay = 14  # 2 week delay in Ab response
@@ -100,7 +103,7 @@ sim_titers = calculate_Ab_titers_biexp(tm_start, tm_end, vacc_timepoints, matern
 # #                                    '_r1' + str(half_life_short_median) +
 # #                                    '_r2' + str(half_life_long_median) +
 # #                                    '_rho' + str(prop_short) + '.png')
-# plot_synth_ab_titers(sim_titers, save_path='results/PRELIM_plotTiters_20210115/',
+# plot_synth_ab_titers(sim_titers, save_path='results/PRELIM_plotTiters_' + ymd + '/',
 #                      save_filename='ab_titers_over_time.png')
 
 # Note: For visualization purposes, plotted data were an earlier run with only 100 "participants;" 1000 were used to
@@ -109,20 +112,20 @@ sim_titers = calculate_Ab_titers_biexp(tm_start, tm_end, vacc_timepoints, matern
 # Write "true" values to file:
 if not os.path.isdir('data/'):
     os.mkdir('data/')
-if not os.path.isdir('data/prelim_check_20210115/'):
-    os.mkdir('data/prelim_check_20210115/')
+if not os.path.isdir('data/prelim_check_' + ymd + '/'):
+    os.mkdir('data/prelim_check_' + ymd + '/')
 
 true_vals = pd.DataFrame(sim_titers)
-true_vals.to_csv('data/prelim_check_20210115/truth.csv', na_rep='NA', index=False)
+true_vals.to_csv('data/prelim_check_' + ymd + '/truth.csv', na_rep='NA', index=False)
 del true_vals
 
 # Add random noise:
 sim_titers = add_random_noise(sim_titers, 0.1)
 
 # # Plot noise-laden "data":
-# plot_synth_ab_titers(sim_titers, save_path='results/PRELIM_plotTiters_20210115/',
+# plot_synth_ab_titers(sim_titers, save_path='results/PRELIM_plotTiters_' + ymd + '/',
 #                      save_filename='ab_titers_over_time_NOISE.png')
 
 # Write synthetic data to file:
 obs_vals = pd.DataFrame(sim_titers)
-obs_vals.to_csv('data/prelim_check_20210115/obs_data.csv', na_rep='NA', index=False)
+obs_vals.to_csv('data/prelim_check_' + ymd + '/obs_data.csv', na_rep='NA', index=False)
