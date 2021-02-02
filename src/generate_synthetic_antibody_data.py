@@ -11,10 +11,12 @@ from functions_python_plot import *
 N_pop = 1000  # number of "participants"
 response_delay = 14  # 2 week delay in Ab response
 prop_short = np.float64(0.70)  # fit this as fixed for now
+beta_1 = np.float64(0.20)  # extent of seasonal variability in beta
+phi = np.float64(1.0)  # maximum in January
 
 # Set parameter medians:
 maternal_antibodies_median = 8.0
-betas_median = np.array([18.0])  # single dose for now
+beta_0s_median = np.array([18.0])  # median avg. titer; single dose for now
 half_life_maternal_median = 42.0  # days
 half_life_short_median = 30.0  # days
 half_life_long_median = 3650.0  # days
@@ -29,7 +31,14 @@ vacc_timepoints = np.array([365])  # vaccinate between 12 and 15 months; can be 
 
 #######################################################################################################################
 
-# Set values for each participant:
+# Select birth month (1-12) for each participant:
+rng = np.random.default_rng()
+birth_months = rng.integers(low=1, high=13, size=N_pop)
+
+# Convert to month of first vaccination based on vacc_timepoints:
+vacc_months = birth_months + np.floor(vacc_timepoints[0] / 30)
+
+# Set values of random effects for each participant:
 maternal_antibodies = generate_random_effects(maternal_antibodies_median, sd, N_pop)
 half_life_maternal = generate_random_effects(half_life_maternal_median, sd, N_pop)
 half_life_short = generate_random_effects(half_life_short_median, sd, N_pop)
@@ -50,11 +59,14 @@ print(np.std(half_life_long) / np.mean(half_life_long))
 # print(np.std(a) / np.mean(a))  # this depends on both the median and the sd
 # plt.hist(a, bins=100)  # but values may need to be tighter here, to keep values realistic
 
-# And get distribution for each value of beta, as well:
-betas = np.zeros([len(betas_median), N_pop])
-for i in range(len(betas_median)):
-    betas[i] = generate_random_effects(betas_median[i], sd, N_pop)
-    print(np.std(betas[i]) / np.mean(betas[i]))  # check sd
+# And get distribution for each value of beta_0, as well:
+beta_0s = np.zeros([len(beta_0s_median), N_pop])
+for i in range(len(beta_0s_median)):
+    beta_0s[i] = generate_random_effects(beta_0s_median[i], sd, N_pop)
+    print(np.std(beta_0s[i]) / np.mean(beta_0s[i]))  # check sd
+
+# Calculate beta for each participant (random "median" value + seasonal effect):
+betas = beta_0s * (1 + beta_1 * np.cos((2 * np.pi / 12) * (vacc_months - phi)))
 
 #######################################################################################################################
 
