@@ -1,9 +1,10 @@
 # Run model with random effects by participant #
 
 # Import necessary functions:
+import os
 import pandas as pd
+import matplotlib.pyplot as plt
 from functions_python import *
-from functions_python_plot import *
 
 #######################################################################################################################
 
@@ -78,33 +79,17 @@ sim_titers = calculate_Ab_titers_biexp(tm_start, tm_end, vacc_timepoints, matern
                                        half_life_maternal, half_life_short, half_life_long, prop_short,
                                        N_pop, response_delay)
 
-# # Plot:
-# plt.figure(figsize=(20, 9))
-# plt.plot(sim_titers)
-# # plt.yscale('log')
-# plt.hlines(y=(10, 5), xmin=tm_start, xmax=tm_end)
-# plt.vlines(x=(60, 120, 180, 548, 730, 1095, 2191), ymin=0, ymax=30)  # 2/4/6mo; 6m, 1y, 2y, 5y post vaccination
-# plt.tight_layout()
-
-# # Check for realism:
-# print('\nCheck Realistic:')
-# print(np.mean(sim_titers[vacc_timepoints[0]]))  # want: 11-18
-# print(len(np.where(sim_titers[vacc_timepoints[0]] >= 5.0)[0]) / N_pop)  # want: 85-95% (or 100?)
-# print(len(np.where(sim_titers[vacc_timepoints[0] + 365] >= 5.0)[0]) / N_pop)  # want: ~95%
-# print(len(np.where(sim_titers[vacc_timepoints[0] + 365*5] >= 5.0)[0]) / N_pop)  # want: ~88-100%
-# print(len(np.where(sim_titers[vacc_timepoints[0] + 365*9] >= 5.0)[0]) / N_pop)  # less than 100%?
-# # Difficult to tell what's "realistic," as there seems to be a lot of boosting from natural exposure in the literature
-
 # # Plot simulated "data":
-# # plot_synth_ab_titers(sim_titers, save_path='results/PRELIM_plotTiters_20210113/',
-# #                      save_filename='ab_titers_alpha' + str(maternal_antibodies_median) +
-# #                                    '_m' + str(half_life_maternal_median) +
-# #                                    '_beta' + str(betas_median) +
-# #                                    '_r1' + str(half_life_short_median) +
-# #                                    '_r2' + str(half_life_long_median) +
-# #                                    '_rho' + str(prop_short) + '.png')
-# plot_synth_ab_titers(sim_titers, save_path='results/PRELIM_plotTiters_' + ymd + '/',
-#                      save_filename='ab_titers_over_time.png')
+# if not os.path.isdir('results/PRELIM_plotTiters_' + ymd + '/'):
+#     os.mkdir('results/PRELIM_plotTiters_' + ymd + '/')
+#
+# plt.figure()
+# plt.plot(sim_titers)
+# plt.yscale('log')
+# plt.xlabel('Time (Days)')
+# plt.ylabel('Ab Titers')
+# plt.tight_layout()
+# plt.savefig('results/PRELIM_plotTiters_' + ymd + '/ab_titers_over_time.png', dpi=300)
 
 # Note: For visualization purposes, plotted data were an earlier run with only 100 "participants;" 1000 were used to
 # generate the first round of synthetic data for fitting
@@ -123,8 +108,13 @@ del true_vals
 sim_titers = add_random_noise(sim_titers, 0.1)
 
 # # Plot noise-laden "data":
-# plot_synth_ab_titers(sim_titers, save_path='results/PRELIM_plotTiters_' + ymd + '/',
-#                      save_filename='ab_titers_over_time_NOISE.png')
+# plt.figure()
+# plt.plot(sim_titers)
+# plt.yscale('log')
+# plt.xlabel('Time (Days)')
+# plt.ylabel('Ab Titers')
+# plt.tight_layout()
+# plt.savefig('results/PRELIM_plotTiters_' + ymd + '/ab_titers_over_time_NOISE.png', dpi=300)
 
 # Write synthetic data to file:
 obs_vals = pd.DataFrame(sim_titers)
