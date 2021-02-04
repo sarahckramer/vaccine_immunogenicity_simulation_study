@@ -16,16 +16,12 @@ calculate_ab_titers_LOG_postOnly <- function(time, log_beta, logit_rho, log_r_1,
   r_2 = exp(log_r_2)
   
   value <- beta * (rho * exp(-(r_1 + r_2) * (time - 14)) + (1 - rho) * exp(-r_2 * (time - 14)))
-  # b/c no longer multiplying by true/false for piecewise fxn, this shouldn't return NAs/0s, but double-check
   
   if (any(is.na(value))) {
     print('NAs in output!')
   }
-  if (any(value == 0 & !is.na(value))) {
-    print('0s in output on natural scale!')
-  }
   
-  # value[is.na(value) | (value == 0 & !is.na(value))] <- 1e-323 # any lower will give NAs
+  value[value == 0] <- 1e-323 # any lower will give NAs
   
   return(log(value))
 }
