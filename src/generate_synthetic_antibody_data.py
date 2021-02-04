@@ -1,20 +1,26 @@
 # Run model with random effects by participant #
 
 # Import necessary functions:
+import os
 import pandas as pd
+import matplotlib.pyplot as plt
 from functions_python import *
-from functions_python_plot import *
 
 #######################################################################################################################
+
+# Set date:
+ymd = '20210202'
 
 # Set global parameters:
 N_pop = 1000  # number of "participants"
 response_delay = 14  # 2 week delay in Ab response
 prop_short = np.float64(0.70)  # fit this as fixed for now
+beta_1 = np.float64(0.20)  # extent of seasonal variability in beta
+phi = np.float64(1.0)  # maximum in January
 
 # Set parameter medians:
 maternal_antibodies_median = 8.0
-betas_median = np.array([18.0])  # single dose for now
+beta_0s_median = np.array([18.0])  # median avg. titer; single dose for now
 half_life_maternal_median = 42.0  # days
 half_life_short_median = 30.0  # days
 half_life_long_median = 3650.0  # days
@@ -29,7 +35,14 @@ vacc_timepoints = np.array([365])  # vaccinate between 12 and 15 months; can be 
 
 #######################################################################################################################
 
-# Set values for each participant:
+# Select birth month (1-12) for each participant:
+rng = np.random.default_rng()
+birth_months = rng.integers(low=1, high=13, size=N_pop)
+
+# Convert to month of first vaccination based on vacc_timepoints:
+vacc_months = birth_months + np.floor(vacc_timepoints[0] / 30)
+
+# Set values of random effects for each participant:
 maternal_antibodies = generate_random_effects(maternal_antibodies_median, sd, N_pop)
 half_life_maternal = generate_random_effects(half_life_maternal_median, sd, N_pop)
 half_life_short = generate_random_effects(half_life_short_median, sd, N_pop)
@@ -50,11 +63,14 @@ print(np.std(half_life_long) / np.mean(half_life_long))
 # print(np.std(a) / np.mean(a))  # this depends on both the median and the sd
 # plt.hist(a, bins=100)  # but values may need to be tighter here, to keep values realistic
 
-# And get distribution for each value of beta, as well:
-betas = np.zeros([len(betas_median), N_pop])
-for i in range(len(betas_median)):
-    betas[i] = generate_random_effects(betas_median[i], sd, N_pop)
-    print(np.std(betas[i]) / np.mean(betas[i]))  # check sd
+# And get distribution for each value of beta_0, as well:
+beta_0s = np.zeros([len(beta_0s_median), N_pop])
+for i in range(len(beta_0s_median)):
+    beta_0s[i] = generate_random_effects(beta_0s_median[i], sd, N_pop)
+    print(np.std(beta_0s[i]) / np.mean(beta_0s[i]))  # check sd
+
+# Calculate beta for each participant (random "median" value + seasonal effect):
+betas = beta_0s * (1 + beta_1 * np.cos((2 * np.pi / 12) * (vacc_months - phi)))
 
 #######################################################################################################################
 
@@ -63,33 +79,17 @@ sim_titers = calculate_Ab_titers_biexp(tm_start, tm_end, vacc_timepoints, matern
                                        half_life_maternal, half_life_short, half_life_long, prop_short,
                                        N_pop, response_delay)
 
-# # Plot:
-# plt.figure(figsize=(20, 9))
-# plt.plot(sim_titers)
-# # plt.yscale('log')
-# plt.hlines(y=(10, 5), xmin=tm_start, xmax=tm_end)
-# plt.vlines(x=(60, 120, 180, 548, 730, 1095, 2191), ymin=0, ymax=30)  # 2/4/6mo; 6m, 1y, 2y, 5y post vaccination
-# plt.tight_layout()
-
-# # Check for realism:
-# print('\nCheck Realistic:')
-# print(np.mean(sim_titers[vacc_timepoints[0]]))  # want: 11-18
-# print(len(np.where(sim_titers[vacc_timepoints[0]] >= 5.0)[0]) / N_pop)  # want: 85-95% (or 100?)
-# print(len(np.where(sim_titers[vacc_timepoints[0] + 365] >= 5.0)[0]) / N_pop)  # want: ~95%
-# print(len(np.where(sim_titers[vacc_timepoints[0] + 365*5] >= 5.0)[0]) / N_pop)  # want: ~88-100%
-# print(len(np.where(sim_titers[vacc_timepoints[0] + 365*9] >= 5.0)[0]) / N_pop)  # less than 100%?
-# # Difficult to tell what's "realistic," as there seems to be a lot of boosting from natural exposure in the literature
-
 # # Plot simulated "data":
-# # plot_synth_ab_titers(sim_titers, save_path='results/PRELIM_plotTiters_20210113/',
-# #                      save_filename='ab_titers_alpha' + str(maternal_antibodies_median) +
-# #                                    '_m' + str(half_life_maternal_median) +
-# #                                    '_beta' + str(betas_median) +
-# #                                    '_r1' + str(half_life_short_median) +
-# #                                    '_r2' + str(half_life_long_median) +
-# #                                    '_rho' + str(prop_short) + '.png')
-# plot_synth_ab_titers(sim_titers, save_path='results/PRELIM_plotTiters_20210115/',
-#                      save_filename='ab_titers_over_time.png')
+# if not os.path.isdir('results/PRELIM_plotTiters_' + ymd + '/'):
+#     os.mkdir('results/PRELIM_plotTiters_' + ymd + '/')
+#
+# plt.figure()
+# plt.plot(sim_titers)
+# plt.yscale('log')
+# plt.xlabel('Time (Days)')
+# plt.ylabel('Ab Titers')
+# plt.tight_layout()
+# plt.savefig('results/PRELIM_plotTiters_' + ymd + '/ab_titers_over_time.png', dpi=300)
 
 # Note: For visualization purposes, plotted data were an earlier run with only 100 "participants;" 1000 were used to
 # generate the first round of synthetic data for fitting
@@ -97,20 +97,25 @@ sim_titers = calculate_Ab_titers_biexp(tm_start, tm_end, vacc_timepoints, matern
 # Write "true" values to file:
 if not os.path.isdir('data/'):
     os.mkdir('data/')
-if not os.path.isdir('data/prelim_check_20210115/'):
-    os.mkdir('data/prelim_check_20210115/')
+if not os.path.isdir('data/prelim_check_' + ymd + '/'):
+    os.mkdir('data/prelim_check_' + ymd + '/')
 
 true_vals = pd.DataFrame(sim_titers)
-true_vals.to_csv('data/prelim_check_20210115/truth.csv', na_rep='NA', index=False)
+true_vals.to_csv('data/prelim_check_' + ymd + '/truth.csv', na_rep='NA', index=False)
 del true_vals
 
 # Add random noise:
 sim_titers = add_random_noise(sim_titers, 0.1)
 
 # # Plot noise-laden "data":
-# plot_synth_ab_titers(sim_titers, save_path='results/PRELIM_plotTiters_20210115/',
-#                      save_filename='ab_titers_over_time_NOISE.png')
+# plt.figure()
+# plt.plot(sim_titers)
+# plt.yscale('log')
+# plt.xlabel('Time (Days)')
+# plt.ylabel('Ab Titers')
+# plt.tight_layout()
+# plt.savefig('results/PRELIM_plotTiters_' + ymd + '/ab_titers_over_time_NOISE.png', dpi=300)
 
 # Write synthetic data to file:
 obs_vals = pd.DataFrame(sim_titers)
-obs_vals.to_csv('data/prelim_check_20210115/obs_data.csv', na_rep='NA', index=False)
+obs_vals.to_csv('data/prelim_check_' + ymd + '/obs_data.csv', na_rep='NA', index=False)
