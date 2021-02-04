@@ -35,6 +35,49 @@ get_param_est <- function(m) {
   # param m: The fitted model object
   # returns: A data frame containing parameter estimates, 95% confidence intervals, and st. devs. of random effects
   
+  # Specify random effects:
+  random.parms <- c('log_beta', 'log_r_1', 'log_r_2')
+  
+  # Extract results from model:
+  res.df <- as.data.frame(summary(m)$tTable)
+  res.sd <- as.numeric(VarCorr(m)[random.parms, 'StdDev'])
+  
+  # Remove columns not of interest:
+  res.df <- res.df[, 1:2]
+  
+  # Convert point estimates to scale of interest:
+  res.df[random.parms, 1] <- exp(res.df[random.parms, 1]) # exponentiate all except rho
+  
+  # Calculate confidence intervals for fixed effects (use delta method):
+  res.df$lower <- res.df$Value - 1.96 * res.df$Value * res.df$Std.Error
+  res.df$upper <- res.df$Value + 1.96 * res.df$Value * res.df$Std.Error
+  res.df['logit_rho', 'lower'] <- plogis(res.df['logit_rho', 1]) - 1.96 *
+    (exp(res.df['logit_rho', 1]) / (exp(res.df['logit_rho', 1]) + 1) ** 2) * res.df['logit_rho', 2]
+  res.df['logit_rho', 'upper'] <- plogis(res.df['logit_rho', 1]) + 1.96 *
+    (exp(res.df['logit_rho', 1]) / (exp(res.df['logit_rho', 1]) + 1) ** 2) * res.df['logit_rho', 2]
+  
+  # And convert rho back to natural scale:
+  res.df['logit_rho', 1] <- plogis(res.df['logit_rho', 1]) # inverse logit of rho
+  
+  # Remove standard errors:
+  res.df <- res.df[, c(1, 3:4)]
+  
+  # Add in st. dev. of random effects:
+  res.df[random.parms, 'sd_random'] <- res.sd
+  
+  # Correct rownames to no longer say "log":
+  rownames(res.df) <- c('beta', 'rho', 'r_short', 'r_long')
+  
+  # Return results:
+  return(res.df)
+}
+
+
+get_param_est_inclMaternal <- function(m) {
+  # Function to format and return estimates from an nlme model fit, when including maternal antibody dynamics
+  # param m: The fitted model object
+  # returns: A data frame containing parameter estimates, 95% confidence intervals, and st. devs. of random effects
+  
   # Extract results from model:
   res.df <- as.data.frame(summary(m)$tTable)
   res.sd <- as.numeric(VarCorr(m)[c('log_alpha', 'log_m', 'log_beta', 'log_r_1', 'log_r_2'), 'StdDev'])
@@ -48,8 +91,8 @@ get_param_est <- function(m) {
   # Calculate confidence intervals for fixed effects (use delta method):
   res.df$lower <- res.df$Value - 1.96 * res.df$Value * res.df$Std.Error
   res.df$upper <- res.df$Value + 1.96 * res.df$Value * res.df$Std.Error
-  res.df$lower[4] <- plogis(res.df[4, 1]) - 1.96 * (exp(res.df[4, 1]) / (exp(res.df[4, 1]) + 1)**2) * res.df[4, 2]
-  res.df$upper[4] <- plogis(res.df[4, 1]) + 1.96 * (exp(res.df[4, 1]) / (exp(res.df[4, 1]) + 1)**2) * res.df[4, 2]
+  res.df$lower[4] <- plogis(res.df[4, 1]) - 1.96 * (exp(res.df[4, 1]) / (exp(res.df[4, 1]) + 1) ** 2) * res.df[4, 2]
+  res.df$upper[4] <- plogis(res.df[4, 1]) + 1.96 * (exp(res.df[4, 1]) / (exp(res.df[4, 1]) + 1) ** 2) * res.df[4, 2]
   
   # And convert rho back to natural scale:
   res.df[4, 1] <- plogis(res.df[4, 1]) # inverse logit of rho
