@@ -34,14 +34,22 @@ select_timepoints <- list(c(379, seq(379+21, 1090, by = 30)),
 set.seed(3970395)
 
 # Read in noise-laden "data":
-ab_titers <- read.csv('data/prelim_check_20210115/obs_data.csv')
-# ab_titers <- read.csv('data/prelim_check_20210115/truth.csv')
+ab_titers <- read.csv('data/prelim_check_20210202/obs_data.csv')
+
+# Read in month of vaccination:
+vacc_month <- read.csv('data/prelim_check_20210202/vacc_months.csv', header = FALSE)
 
 # Reformat data frame:
 ab_titers$time <- 0:(dim(ab_titers)[1] - 1)
 ab_titers$time <- as.numeric(as.character(ab_titers$time))
 ab_titers <- melt(ab_titers, id.vars = 'time')
 names(ab_titers)[2] <- 'subject'
+ab_titers <- dcast(subject ~ time, data = ab_titers, value.var = 'value')
+ab_titers$vacc_month <- vacc_month$V1
+ab_titers <- melt(ab_titers, id.vars = c('subject', 'vacc_month'))
+names(ab_titers)[3] <- 'time'
+ab_titers$time <- as.numeric(as.character(ab_titers$time))
+ab_titers$vacc_month <- ab_titers$vacc_month - 12
 
 # Select subset of subjects?:
 ab_titers <- ab_titers[ab_titers$subject %in% levels(ab_titers$subject)[sample(1:1000, n_participants)], ]
@@ -99,10 +107,48 @@ qqnorm(m3.alt, abline = c(0, 1)) # looks better when more data points are includ
 # qqnorm(m3, ~ ranef(.))
 # viz_model_fit(m3, ab_titers, logscale = TRUE)
 
+# Check whether random effects associated with season of vaccination:
+rand_effects <- ranef(m3.alt)
+rand_effects$subject <- rownames(rand_effects)
+rand_effects <- merge(rand_effects, unique(ab_titers[, c('subject', 'vacc_month')]), by = 'subject')
+plot(rand_effects) # clear seasonal patterns in beta estimates
+
+# Update to include covariates to beta? I think covariates would have to be linear
+
+# Fit model including seasonality:
+m4 <- nls(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal(time, vacc_month, log_beta0, logit_beta1, phi, logit_rho, log_r_1, log_r_2),
+          data = ab_titers,
+          start = c(log_beta0 = log(18.0), logit_beta1 = qlogis(0.15), phi = 0.0, logit_rho = qlogis(0.75),
+                    log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
+m5 <- nlsList(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal(time, vacc_month, log_beta0, logit_beta1, phi, logit_rho, log_r_1, log_r_2) | subject,
+              data = ab_titers,
+              start = c(log_beta = log(18.0), logit_beta1 = qlogis(0.15), phi = 0.0, logit_rho = qlogis(0.75),
+                        log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
+plot(intervals(m5))
+pairs(m5)
+
+m6 <- nlme(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal(time, vacc_month, log_beta0, logit_beta1, phi, logit_rho, log_r_1, log_r_2),
+           data = ab_titers,
+           fixed = log_beta0 + logit_beta1 + phi + logit_rho + log_r_1 + log_r_2 ~ 1,
+           random = pdDiag(log_beta0 + log_r_1 + log_r_2 ~ 1),
+           groups = ~subject,
+           start = c(log_beta0 = log(18.0), logit_beta1 = qlogis(0.1), phi = 0.0, logit_rho = qlogis(0.75),
+                     log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
+m6.alt <- nlme(m5, random = pdDiag(log_beta0 + log_r_1 + log_r_2 ~ 1))
+
+plot(m6)
+pairs(m6)
+qqnorm(m6, abline = c(0, 1))
+
+rand_effects <- ranef(m6)
+rand_effects$subject <- rownames(rand_effects)
+rand_effects <- merge(rand_effects, unique(ab_titers[, c('subject', 'vacc_month')]), by = 'subject')
+plot(rand_effects)
+
 # Do we need random effect of r2?
-m4 <- update(m3.alt, random = pdDiag(log_beta + log_r_1 ~ 1))
-anova(m3.alt, m4)
-rm(m4)
+m7 <- update(m6, random = pdDiag(log_beta0 + log_r_1 ~ 1))
+anova(m6, m7)
+rm(m7)
 
 # # Try to account for any correlation structure?:
 # plot(ACF(m3, maxLag = 10), alpha = 0.05) # seems to be some autocorrelation?
@@ -118,7 +164,7 @@ rm(m4)
 # # seems to improve for some (more likely to make a difference when more timepoints/participants), but don't see much visual evidence
 
 # Now extract parameter fits and random effect sds:
-results.df <- get_param_est(m3.alt)
+results.df <- get_param_est(m6, seasonal = TRUE)
 print(results.df)
 
 # if (!dir.exists(paste0('results/PRELIM_nlme_res_', ymd, '/'))) {
