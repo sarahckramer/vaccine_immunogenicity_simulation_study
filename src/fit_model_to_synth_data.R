@@ -19,8 +19,9 @@ ymd <- '20210203'
 n_participants <- 50 # 50, 100, 250, 500, 1000
 sample_interval <- 1 # 1-4; selecting from list below
 select_timepoints <- list(c(379, seq(379+21, 1090, by = 30)),
-                          c(seq(379+51, 1090, by = 60)),
-                          c(379, 550, 730, 1095),
+                          c(379, seq(379+51, 1090, by = 60)),
+                          c(379, seq(379 + 111, 1090, by = 120)),
+                          # c(379, 550, 730, 1095),
                           c(379, 730, 1095, 2190))
 
 # select_timepoints <- list(c(365, 379, seq(379+21, 1090, by = 30)),
