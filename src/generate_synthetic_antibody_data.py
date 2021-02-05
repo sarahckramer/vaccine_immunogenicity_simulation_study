@@ -119,3 +119,7 @@ sim_titers = add_random_noise(sim_titers, 0.1)
 # Write synthetic data to file:
 obs_vals = pd.DataFrame(sim_titers)
 obs_vals.to_csv('data/prelim_check_' + ymd + '/obs_data.csv', na_rep='NA', index=False)
+
+# Write month of vaccine to file:
+vacc_months = pd.DataFrame(vacc_months)
+vacc_months.to_csv('data/prelim_check_' + ymd + '/vacc_months.csv', na_rep='NA', index=False, header=False)
