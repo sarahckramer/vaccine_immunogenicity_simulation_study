@@ -13,6 +13,8 @@ calculate_ab_titers_LOG_postOnly_seasonal <- function(time, v_time, log_beta0, l
   # param log_r_2: Natural log of the rate of antibody decay (long-lived)
   # returns: The log of simulated antibody titers over time
 
+  log_r_2[log_r_2 > 500] <- 500 # otherwise r_2 is Inf
+  
   beta0 = exp(log_beta0)
   beta1 = plogis(logit_beta1)
   # phi = round(phi, digits = 0)
@@ -47,6 +49,8 @@ calculate_ab_titers_LOG_postOnly <- function(time, log_beta, logit_rho, log_r_1,
   # param log_r_1: Natural log of the rate of antibody decay (short-lived)
   # param log_r_2: Natural log of the rate of antibody decay (long-lived)
   # returns: The log of simulated antibody titers over time
+  
+  log_r_2[log_r_2 > 500] <- 500 # otherwise r_2 is Inf
   
   beta = exp(log_beta)
   rho = plogis(logit_rho)
