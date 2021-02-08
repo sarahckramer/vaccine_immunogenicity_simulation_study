@@ -32,7 +32,7 @@ calculate_ab_titers_LOG_postOnly_seasonal <- function(time, v_time, log_beta0, l
     if (any(is.na(value))) {
     print('NAs in output!')
   }
-    value[value == 0] <- 1e-323 # any lower will give NAs
+  value[value == 0] <- 1e-323 # any lower will give NAs
 
   return(log(value))
 }
