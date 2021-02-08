@@ -21,6 +21,7 @@ calculate_ab_titers_LOG_postOnly_seasonal <- function(time, v_time, log_beta0, l
   r_2 = exp(log_r_2)
 
   beta = beta0 * (1 + beta1 * cos((2 * pi / 12) * (v_time - phi)))
+  # beta = beta0 * (1 + beta1 * cos((2 * pi / 12) * (v_time - (12 / (1 + exp(-phi))))))
   # print(beta)
   if (any(is.na(beta))) {
     print('NAs in beta!')
