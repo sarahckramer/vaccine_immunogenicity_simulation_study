@@ -98,11 +98,11 @@ for param_set in range(input_params.shape[0]):
                                                half_life_maternal, half_life_short, half_life_long, prop_short,
                                                N_pop, response_delay)
 
-        # Write "true" values to file:
-        true_vals = pd.DataFrame(sim_titers)
-        true_vals.to_csv('data/prelim_check_' + ymd + '/truth_' + str(param_set) + '_cv' + str(desired_cv) + '.csv',
-                         na_rep='NA', index=False)
-        del true_vals
+        # # Write "true" values to file:
+        # true_vals = pd.DataFrame(sim_titers)
+        # true_vals.to_csv('data/prelim_check_' + ymd + '/truth_' + str(param_set) + '_cv' + str(desired_cv) + '.csv',
+        #                  na_rep='NA', index=False)
+        # del true_vals
 
         ###############################################################################################################
 
