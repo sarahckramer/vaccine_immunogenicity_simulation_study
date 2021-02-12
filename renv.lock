@@ -72,13 +72,6 @@
       "Repository": "CRAN",
       "Hash": "3ef298932294b775fa0a3eeaa3a645b0"
     },
-    "cluster": {
-      "Package": "cluster",
-      "Version": "2.1.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "db63a44aab5aadcb6bf2f129751d129a"
-    },
     "colorspace": {
       "Package": "colorspace",
       "Version": "2.0-0",
@@ -212,13 +205,6 @@
       "Repository": "CRAN",
       "Hash": "41287f1ac7d28a92f0a286ed507928d3"
     },
-    "maptree": {
-      "Package": "maptree",
-      "Version": "1.4-7",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "81ddc2ad65a01be843f9bdedb5c18afa"
-    },
     "mgcv": {
       "Package": "mgcv",
       "Version": "1.8-33",
@@ -336,13 +322,6 @@
       "Repository": "CRAN",
       "Hash": "599df23c40a4fce9c7b4764f28c37857"
     },
-    "rpart": {
-      "Package": "rpart",
-      "Version": "4.1-15",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "9787c1fcb680e655d062e7611cadf78e"
-    },
     "rprojroot": {
       "Package": "rprojroot",
       "Version": "2.0.2",
@@ -384,13 +363,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "17826764cb92d8b5aae6619896e5a161"
-    },
-    "tgp": {
-      "Package": "tgp",
-      "Version": "2.4-17",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "32d0b780d9a5904cfb2eefd2269877a5"
     },
     "tibble": {
       "Package": "tibble",

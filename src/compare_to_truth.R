@@ -1,10 +1,16 @@
-### Compare model estimates to true parameter values ###
-# For now, this is by number of subjects/timepoints included
+# ---------------------------------------------------------------------------------------------------------------------
+# Compare model estimates to true parameter values
+# (For now, this is by number of subjects/timepoints included)
+# ---------------------------------------------------------------------------------------------------------------------
+
+# Setup ---------------------------------------------------------------------------------------------------------------
 
 # Specify date:
-ymd <- '20210203'
+ymd <- '20210212'
 
-# Read in results:
+# Read in/format results ----------------------------------------------------------------------------------------------
+
+# Read in:
 n_participants <- c(50, 100, 250, 500, 1000)
 timepoint_intervals <- c(1, 2, 3, 4)
 
@@ -15,7 +21,7 @@ for (i in n_participants) {
     filename <- paste0('results/PRELIM_nlme_res_', ymd, '/res_n', i,'_t', j, '.csv')
     if (file.exists(filename)) {
       dat <- read.csv(filename)
-      dat$param <- c('beta', 'rho', 'r1', 'r2')
+      dat$param <- c('beta0', 'beta1', 'phi', 'rho', 'r1', 'r2')
       dat$subjects <- i
       dat$interval <- j
       param_est <- rbind(param_est, dat)
@@ -25,10 +31,12 @@ for (i in n_participants) {
 }
 rm(i, j, dat, filename)
 
-# Format results:
+# Format:
 param_est$param <- factor(param_est$param)
 param_est$interval <- factor(param_est$interval)
 levels(param_est$interval) <- c('30 Days', '60 Days', '120 Days', 'Realistic')
+
+# Compare to truth ----------------------------------------------------------------------------------------------------
 
 # Specify true values:
 sd_truth <- 0.10
@@ -36,10 +44,12 @@ param_est$truth <- NA
 
 # param_est$truth[param_est$param == 'alpha'] <- 8.0
 # param_est$truth[param_est$param == 'm'] <- log(2)/42.0
-param_est$truth[param_est$param == 'beta'] <- 18.0
+param_est$truth[param_est$param == 'beta0'] <- 18.0
+param_est$truth[param_est$param == 'beta1'] <- 0.2
+param_est$truth[param_est$param == 'phi'] <- 1.0
 param_est$truth[param_est$param == 'rho'] <- 0.70
-param_est$truth[param_est$param == 'r1'] <- log(2)/30.0 - log(2)/3650.0
 param_est$truth[param_est$param == 'r2'] <- log(2)/3650.0
+param_est$truth[param_est$param == 'r1'] <- log(2)/30.0 - param_est$truth[param_est$param == 'r2']
 
 # Calculate absolute and relative errors (parameter values):
 param_est$abs_err_val <- param_est$Value - param_est$truth
@@ -48,6 +58,8 @@ param_est$rel_err_val <- param_est$abs_err_val / param_est$truth
 # Calculate absolute and relative errors (random effect sds):
 param_est$abs_err_val_sd <- param_est$sd_random - sd_truth
 param_est$rel_err_val_sd <- param_est$abs_err_val_sd / sd_truth
+
+# Plot results --------------------------------------------------------------------------------------------------------
 
 # Plot estimates (w/ ranges) vs. truth for each subject/interval combination:
 p1 <- ggplot(data = param_est) +
@@ -63,7 +75,7 @@ print(p1)
 # Estimates for most parameters appear quite accurate (rho is consistently underestimated, but not by much)
 
 # Plot estimated sds for each combination and parameter:
-p2 <- ggplot(data = param_est[param_est$param != 'rho', ]) +
+p2 <- ggplot(data = param_est[!(param_est$param %in% c('beta1', 'phi', 'rho')), ]) +
   geom_point(aes(x = factor(subjects), y = sd_random)) +
   geom_hline(yintercept = sd_truth) +
   facet_grid(param ~ interval) +
@@ -81,7 +93,7 @@ p3 <- ggplot(data = param_est) +
   facet_wrap(~ param, scales = 'free_x') +
   theme_classic() +
   labs(x = 'Relative Error', y = '')
-p4 <- ggplot(data = param_est[param_est$param != 'rho', ]) +
+p4 <- ggplot(data = param_est[!(param_est$param %in% c('beta1', 'phi', 'rho')), ]) +
   geom_histogram(aes(x = rel_err_val_sd, y = 0.01 * ..density..),
                  binwidth = 0.01, col = 'white', fill = 'coral') +
   geom_vline(xintercept = 0, lty = 2) +

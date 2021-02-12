@@ -1,4 +1,6 @@
-### Functions to observe and analyze model fit ###
+# ---------------------------------------------------------------------------------------------------------------------
+# Functions to observe and analyze model fit
+# ---------------------------------------------------------------------------------------------------------------------
 
 viz_model_fit <- function(m, dat, logscale = F) {
   # Function to plot the fitted values and residuals of an nlme object
@@ -30,13 +32,22 @@ viz_model_fit <- function(m, dat, logscale = F) {
 }
 
 
-get_param_est <- function(m) {
+get_param_est <- function(m, seasonal = FALSE) {
   # Function to format and return estimates from an nlme model fit
   # param m: The fitted model object
+  # param seasonal: Is seasonality included in the model?
   # returns: A data frame containing parameter estimates, 95% confidence intervals, and st. devs. of random effects
   
   # Specify random effects:
-  random.parms <- c('log_beta', 'log_r_1', 'log_r_2')
+  if (seasonal) {
+    random.parms <- c('log_beta0', 'log_r_1', 'log_r_2')
+    log.parms <- c('log_beta0', 'log_r_1', 'log_r_2')
+    logit.parms <- c('logit_beta1', 'phi_hat', 'logit_rho')
+  } else {
+    random.parms <- c('log_beta', 'log_r_1', 'log_r_2')
+    log.parms <- c('log_beta', 'log_r_1', 'log_r_2')
+    logit.parms <- 'logit_rho'
+  }
   
   # Extract results from model:
   res.df <- as.data.frame(summary(m)$tTable)
@@ -46,18 +57,22 @@ get_param_est <- function(m) {
   res.df <- res.df[, 1:2]
   
   # Convert point estimates to scale of interest:
-  res.df[random.parms, 1] <- exp(res.df[random.parms, 1]) # exponentiate all except rho
+  res.df[log.parms, 1] <- exp(res.df[log.parms, 1]) # exponentiate all params on log scale
   
   # Calculate confidence intervals for fixed effects (use delta method):
-  res.df$lower <- res.df$Value - 1.96 * res.df$Value * res.df$Std.Error
-  res.df$upper <- res.df$Value + 1.96 * res.df$Value * res.df$Std.Error
-  res.df['logit_rho', 'lower'] <- plogis(res.df['logit_rho', 1]) - 1.96 *
-    (exp(res.df['logit_rho', 1]) / (exp(res.df['logit_rho', 1]) + 1) ** 2) * res.df['logit_rho', 2]
-  res.df['logit_rho', 'upper'] <- plogis(res.df['logit_rho', 1]) + 1.96 *
-    (exp(res.df['logit_rho', 1]) / (exp(res.df['logit_rho', 1]) + 1) ** 2) * res.df['logit_rho', 2]
+  res.df[log.parms, 'lower'] <- res.df[log.parms, 1] - 1.96 * res.df[log.parms, 1] * res.df[log.parms, 2]
+  res.df[log.parms, 'upper'] <- res.df[log.parms, 1] + 1.96 * res.df[log.parms, 1] * res.df[log.parms, 2]
   
-  # And convert rho back to natural scale:
-  res.df['logit_rho', 1] <- plogis(res.df['logit_rho', 1]) # inverse logit of rho
+  res.df[logit.parms, 'lower'] <- plogis(res.df[logit.parms, 1]) - 1.96 *
+    (exp(res.df[logit.parms, 1]) / (exp(res.df[logit.parms, 1]) + 1) ** 2) * res.df[logit.parms, 2]
+  res.df[logit.parms, 'upper'] <- plogis(res.df[logit.parms, 1]) + 1.96 *
+    (exp(res.df[logit.parms, 1]) / (exp(res.df[logit.parms, 1]) + 1) ** 2) * res.df[logit.parms, 2]
+  
+  # And convert logit-transformed params back to natural scale:
+  res.df[logit.parms, 1] <- plogis(res.df[logit.parms, 1]) # inverse logit of all params on logit scale
+  
+  # Finish conversion for phi:
+  res.df['phi_hat', c(1, 3:4)] <- res.df['phi_hat', c(1, 3:4)] * 12
   
   # Remove standard errors:
   res.df <- res.df[, c(1, 3:4)]
@@ -66,7 +81,11 @@ get_param_est <- function(m) {
   res.df[random.parms, 'sd_random'] <- res.sd
   
   # Correct rownames to no longer say "log":
-  rownames(res.df) <- c('beta', 'rho', 'r_short', 'r_long')
+  if (seasonal) {
+    rownames(res.df) <- c('beta0', 'beta1', 'phi', 'rho', 'r_short', 'r_long')
+  } else {
+    rownames(res.df) <- c('beta', 'rho', 'r_short', 'r_long')
+  }
   
   # Return results:
   return(res.df)
