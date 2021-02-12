@@ -13,6 +13,7 @@ ymd = '20210210'
 # Set global parameters:
 N_pop = 1000  # number of "participants"
 response_delay = 14  # 2 week delay in Ab response
+phi = np.float64(1.0)  # maximum in January
 maternal_antibodies_median = 8.0
 half_life_maternal_median = 42.0  # days
 
@@ -55,10 +56,9 @@ for param_set in range(input_params.shape[0]):
     # Get fixed effects for each parameter:
     beta_0s_median = np.array([input_params[param_set, 0]])
     beta_1 = input_params[param_set, 1]
-    phi = input_params[param_set, 2]
-    prop_short = input_params[param_set, 3]
-    half_life_short_median = input_params[param_set, 4]
-    half_life_long_median = input_params[param_set, 5]
+    prop_short = input_params[param_set, 2]
+    half_life_short_median = input_params[param_set, 3]
+    half_life_long_median = input_params[param_set, 4]
 
     ###################################################################################################################
 
