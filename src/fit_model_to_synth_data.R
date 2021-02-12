@@ -91,7 +91,7 @@ m1 <- nls(log(value) ~ calculate_ab_titers_LOG_postOnly(time, log_beta, logit_rh
           data = ab_titers,
           start = c(log_beta = log(18.0), logit_rho = qlogis(0.75), log_r_1 = log(log(2)/30),
                     log_r_2 = log(log(2)/3650)))
-summary(m1)
+# summary(m1)
 
 # Next try nlsList (separate fits for each person):
 m2 <- nlsList(log(value) ~ calculate_ab_titers_LOG_postOnly(time, log_beta, logit_rho, log_r_1, log_r_2) | subject,
@@ -133,25 +133,25 @@ plot(rand_effects) # clear seasonal patterns in beta estimates
 m4 <- nls(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal(time, vacc_month, log_beta0, logit_beta1, phi_hat,
                                                                  logit_rho, log_r_1, log_r_2),
           data = ab_titers,
-          start = c(log_beta0 = log(18.0), logit_beta1 = qlogis(0.15), phi_hat = -log(5), logit_rho = qlogis(0.75),
-                    log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
-m5 <- nlsList(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal(time, vacc_month, log_beta0, logit_beta1, phi,
+          start = c(log_beta0 = log(18.0), logit_beta1 = qlogis(0.15), phi_hat = qlogis(2/12),
+                    logit_rho = qlogis(0.75), log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
+m5 <- nlsList(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal(time, vacc_month, log_beta0, logit_beta1, phi_hat,
                                                                      logit_rho, log_r_1, log_r_2) | subject,
               data = ab_titers,
-              start = c(log_beta = log(18.0), logit_beta1 = qlogis(0.15), phi = -log(5), logit_rho = qlogis(0.75),
-                        log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
-plot(intervals(m5))
-pairs(m5)
+              start = c(log_beta = log(18.0), logit_beta1 = qlogis(0.15), phi_hat = qlogis(2/12),
+                        logit_rho = qlogis(0.75), log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
+# plot(intervals(m5))
+# pairs(m5)
 
-m6 <- nlme(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal(time, vacc_month, log_beta0, logit_beta1, phi,
+m6 <- nlme(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal(time, vacc_month, log_beta0, logit_beta1, phi_hat,
                                                                   logit_rho, log_r_1, log_r_2),
            data = ab_titers,
-           fixed = log_beta0 + logit_beta1 + phi + logit_rho + log_r_1 + log_r_2 ~ 1,
+           fixed = log_beta0 + logit_beta1 + phi_hat + logit_rho + log_r_1 + log_r_2 ~ 1,
            random = pdDiag(log_beta0 + log_r_1 + log_r_2 ~ 1),
            groups = ~subject,
-           start = c(log_beta0 = log(18.0), logit_beta1 = qlogis(0.1), phi = -log(5), logit_rho = qlogis(0.75),
-                     log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
-m6.alt <- nlme(m5, random = pdDiag(log_beta0 + log_r_1 + log_r_2 ~ 1))
+           start = c(log_beta0 = log(18.0), logit_beta1 = qlogis(0.1), phi_hat = qlogis(2/12),
+                     logit_rho = qlogis(0.75), log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
+# m6.alt <- nlme(m5, random = pdDiag(log_beta0 + log_r_1 + log_r_2 ~ 1))
 
 plot(m6)
 pairs(m6)
@@ -222,10 +222,10 @@ print(results.df)
 # }
 # 
 # saemix_model <- saemixModel(model = ab_mod,
-#                             psi0 = matrix(c(log(18.0), 0.1, -log(5), 0.75, log(log(2)/30), log(log(2)/3650)),
+#                             psi0 = matrix(c(log(18.0), 0.1, qlogis(2/12), 0.75, log(log(2)/30), log(log(2)/3650)),
 #                                           ncol = 6,
 #                                           byrow = TRUE,
-#                                           dimnames = list(NULL, c('log_beta0', 'logit_beta1', 'phi',
+#                                           dimnames = list(NULL, c('log_beta0', 'logit_beta1', 'phi_hat',
 #                                                                   'logit_rho', 'log_r_1', 'log_r_2'))),
 #                             transform.par = c(0, 3, 0, 3, 0, 0),
 #                             fixed.estim = c(1, 1, 1, 1, 1, 1),

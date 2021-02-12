@@ -20,15 +20,12 @@ calculate_ab_titers_LOG_postOnly_seasonal <- function(time, v_time, log_beta0, l
   
   beta0 = exp(log_beta0)
   beta1 = plogis(logit_beta1)
-  # phi = round(phi, digits = 0)
-  phi = 12 / (1 + exp(-phi_hat))
+  phi = 12 / (1 + exp(-phi_hat)) # or: plogis(phi_hat) * 12
   rho = plogis(logit_rho)
   r_1 = exp(log_r_1)
   r_2 = exp(log_r_2)
 
   beta = beta0 * (1 + beta1 * cos((2 * pi / 12) * (v_time - phi)))
-  # beta = beta0 * (1 + beta1 * cos((2 * pi / 12) * (v_time - (12 / (1 + exp(-phi))))))
-  # print(beta)
   if (any(is.na(beta))) {
     print('NAs in beta!')
   }
