@@ -1,13 +1,13 @@
 ### Functions describing antibody titers over time ###
 
-calculate_ab_titers_LOG_postOnly_seasonal <- function(time, v_time, log_beta0, logit_beta1, phi, logit_rho, log_r_1, log_r_2) {
+calculate_ab_titers_LOG_postOnly_seasonal <- function(time, v_time, log_beta0, logit_beta1, phi_hat, logit_rho, log_r_1, log_r_2) {
   # Calculates log of antibody titers over time using non-mechanistic, bi-exponential model, assuming maternal Ab
   # negligible at vaccine timepoint
   # param time: Time in days, with day of vaccine = 0
   # param v_time: Month of initial vaccination (1-12 = Jan-Dec)
   # param log_beta0: Natural log of the average boost in antibodies 2 weeks after vaccination
   # param log_beta1: Logit of the magnitude of seasonal variation in antibody boost
-  # param phi: The month of maximal vaccine impact (1=Jan, 0 or 12=Dec)
+  # param phi_hat: A transformation of the month of maximal vaccine impact, such that phi (below) varies between 0 and 12
   # param logit_rho: Logit of the proportion of antibodies decaying at faster rate r_1
   # param log_r_1: Natural log of the rate of antibody decay (short-lived)
   # param log_r_2: Natural log of the rate of antibody decay (long-lived)
@@ -19,6 +19,7 @@ calculate_ab_titers_LOG_postOnly_seasonal <- function(time, v_time, log_beta0, l
   beta0 = exp(log_beta0)
   beta1 = plogis(logit_beta1)
   # phi = round(phi, digits = 0)
+  phi = 12 / (1 + exp(-phi_hat))
   rho = plogis(logit_rho)
   r_1 = exp(log_r_1)
   r_2 = exp(log_r_2)
