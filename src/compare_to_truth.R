@@ -1,10 +1,16 @@
-### Compare model estimates to true parameter values ###
-# For now, this is by number of subjects/timepoints included
+# ---------------------------------------------------------------------------------------------------------------------
+# Compare model estimates to true parameter values
+# (For now, this is by number of subjects/timepoints included)
+# ---------------------------------------------------------------------------------------------------------------------
+
+# Setup ---------------------------------------------------------------------------------------------------------------
 
 # Specify date:
 ymd <- '20210209'
 
-# Read in results:
+# Read in/format results ----------------------------------------------------------------------------------------------
+
+# Read in:
 n_participants <- c(50, 100, 250, 500, 1000)
 timepoint_intervals <- c(1, 2, 3, 4)
 
@@ -25,10 +31,12 @@ for (i in n_participants) {
 }
 rm(i, j, dat, filename)
 
-# Format results:
+# Format:
 param_est$param <- factor(param_est$param)
 param_est$interval <- factor(param_est$interval)
 levels(param_est$interval) <- c('30 Days', '60 Days', '120 Days', 'Realistic')
+
+# Compare to truth ----------------------------------------------------------------------------------------------------
 
 # Specify true values:
 sd_truth <- 0.10
@@ -50,6 +58,8 @@ param_est$rel_err_val <- param_est$abs_err_val / param_est$truth
 # Calculate absolute and relative errors (random effect sds):
 param_est$abs_err_val_sd <- param_est$sd_random - sd_truth
 param_est$rel_err_val_sd <- param_est$abs_err_val_sd / sd_truth
+
+# Plot results --------------------------------------------------------------------------------------------------------
 
 # Plot estimates (w/ ranges) vs. truth for each subject/interval combination:
 p1 <- ggplot(data = param_est) +

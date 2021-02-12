@@ -1,4 +1,6 @@
-### Functions to observe and analyze model fit ###
+# ---------------------------------------------------------------------------------------------------------------------
+# Functions to observe and analyze model fit
+# ---------------------------------------------------------------------------------------------------------------------
 
 viz_model_fit <- function(m, dat, logscale = F) {
   # Function to plot the fitted values and residuals of an nlme object

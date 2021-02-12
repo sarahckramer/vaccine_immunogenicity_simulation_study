@@ -1,4 +1,6 @@
-### Functions describing antibody titers over time ###
+# ---------------------------------------------------------------------------------------------------------------------
+# Functions describing antibody titers over time
+# ---------------------------------------------------------------------------------------------------------------------
 
 calculate_ab_titers_LOG_postOnly_seasonal <- function(time, v_time, log_beta0, logit_beta1, phi_hat, logit_rho, log_r_1, log_r_2) {
   # Calculates log of antibody titers over time using non-mechanistic, bi-exponential model, assuming maternal Ab
