@@ -42,7 +42,7 @@ get_param_est <- function(m, seasonal = FALSE) {
   if (seasonal) {
     random.parms <- c('log_beta0', 'log_r_1', 'log_r_2')
     log.parms <- c('log_beta0', 'log_r_1', 'log_r_2')
-    logit.parms <- c('logit_beta1', 'logit_rho')
+    logit.parms <- c('logit_beta1', 'phi_hat', 'logit_rho')
   } else {
     random.parms <- c('log_beta', 'log_r_1', 'log_r_2')
     log.parms <- c('log_beta', 'log_r_1', 'log_r_2')
@@ -60,11 +60,6 @@ get_param_est <- function(m, seasonal = FALSE) {
   res.df[log.parms, 1] <- exp(res.df[log.parms, 1]) # exponentiate all params on log scale
   
   # Calculate confidence intervals for fixed effects (use delta method):
-  if (seasonal) {
-    res.df['phi', 'lower'] <- res.df['phi', 1] - 1.96 * res.df['phi', 2]
-    res.df['phi', 'upper'] <- res.df['phi', 1] + 1.96 * res.df['phi', 2]
-  }
-  
   res.df[log.parms, 'lower'] <- res.df[log.parms, 1] - 1.96 * res.df[log.parms, 1] * res.df[log.parms, 2]
   res.df[log.parms, 'upper'] <- res.df[log.parms, 1] + 1.96 * res.df[log.parms, 1] * res.df[log.parms, 2]
   
@@ -73,8 +68,11 @@ get_param_est <- function(m, seasonal = FALSE) {
   res.df[logit.parms, 'upper'] <- plogis(res.df[logit.parms, 1]) + 1.96 *
     (exp(res.df[logit.parms, 1]) / (exp(res.df[logit.parms, 1]) + 1) ** 2) * res.df[logit.parms, 2]
   
-  # And convert rho back to natural scale:
+  # And convert logit-transformed params back to natural scale:
   res.df[logit.parms, 1] <- plogis(res.df[logit.parms, 1]) # inverse logit of all params on logit scale
+  
+  # Finish conversion for phi:
+  res.df['phi_hat', c(1, 3:4)] <- res.df['phi_hat', c(1, 3:4)] * 12
   
   # Remove standard errors:
   res.df <- res.df[, c(1, 3:4)]
