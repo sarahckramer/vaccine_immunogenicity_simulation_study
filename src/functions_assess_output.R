@@ -72,7 +72,7 @@ get_param_est <- function(m, seasonal = FALSE) {
     (exp(res.df[logit.parms, 1]) / (exp(res.df[logit.parms, 1]) + 1) ** 2) * res.df[logit.parms, 2]
   
   # And convert rho back to natural scale:
-  res.df[logit.parms, 1] <- plogis(res.df[logit.parms, 1]) # inverse logit of rho
+  res.df[logit.parms, 1] <- plogis(res.df[logit.parms, 1]) # inverse logit of all params on logit scale
   
   # Remove standard errors:
   res.df <- res.df[, c(1, 3:4)]
