@@ -19,7 +19,7 @@ library(ggplot2)
 library(gridExtra)
 
 # Specify date (for results outputs):
-ymd <- '20210203'
+ymd <- '20210212'
 
 # Set number of data points/subjects:
 n_participants <- 50 # 50, 100, 250, 500, 1000
