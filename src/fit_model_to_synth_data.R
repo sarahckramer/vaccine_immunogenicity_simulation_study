@@ -58,6 +58,7 @@ ab_titers <- melt(ab_titers, id.vars = c('subject', 'vacc_month'))
 names(ab_titers)[3] <- 'time'
 ab_titers$time <- as.numeric(as.character(ab_titers$time))
 ab_titers$vacc_month <- ab_titers$vacc_month - 12
+ab_titers <- ab_titers[order(ab_titers$subject), ]
 
 # Select subset of subjects?:
 ab_titers <- ab_titers[ab_titers$subject %in% levels(ab_titers$subject)[sample(1:1000, n_participants)], ]
@@ -200,38 +201,45 @@ print(results.df)
 # # saemix:
 # ab_titers$logvalue <- log(ab_titers$value)
 # library(saemix)
-# ab_mix <- saemixData(name.data = ab_titers, name.group = 'subject', name.predictors = 'time',
-#                      name.response = 'logvalue', units = list(x = 'time', y = 'logvalue'))
+# 
+# ab_mix <- saemixData(name.data = ab_titers, name.group = 'subject', name.predictors = c('time', 'vacc_month'),
+#                      name.response = 'logvalue')
+# 
 # ab_mod <- function(psi, id, xidep) {
 #   time <- xidep[, 1]
+#   v_time <- xidep[, 2]
 # 
-#   # log_alpha <- psi[id, 1]
-#   # log_m <- psi[id, 2]
-#   log_beta <- psi[id, 1]
-#   logit_rho <- qlogis(psi[id, 2])
-#   log_r_1 <- psi[id, 3]
-#   log_r_2 <- psi[id, 4]
+#   log_beta0 <- psi[id, 1]
+#   logit_beta1 <- qlogis(psi[id, 2])
+#   phi_hat <- psi[id, 3]
+#   logit_rho <- qlogis(psi[id, 4])
+#   log_r_1 <- psi[id, 5]
+#   log_r_2 <- psi[id, 6]
 # 
-#   logvalue <- calculate_ab_titers_LOG_postOnly(time, log_beta, logit_rho, log_r_1, log_r_2)
+#   logvalue <- calculate_ab_titers_LOG_postOnly_seasonal(time, v_time, log_beta0, logit_beta1, phi_hat, logit_rho,
+#                                                         log_r_1, log_r_2)
 #   return(logvalue)
 # }
+# 
 # saemix_model <- saemixModel(model = ab_mod,
-#                             psi0 = matrix(c(log(18.0), 0.75, log(log(2)/30), log(log(2)/3650)),
-#                                           ncol = 4,
+#                             psi0 = matrix(c(log(18.0), 0.1, -log(5), 0.75, log(log(2)/30), log(log(2)/3650)),
+#                                           ncol = 6,
 #                                           byrow = TRUE,
-#                                           dimnames = list(NULL, c('log_beta', 'logit_rho', 'log_r_1',
-#                                                                   'log_r_2'))),
-#                             transform.par = c(0, 3, 0, 0),
-#                             fixed.estim = c(1, 1, 1, 1),
-#                             covariance.model = matrix(c(1, 0, 1, 1,
-#                                                         0, 0, 0, 0,
-#                                                         1, 0, 1, 1,
-#                                                         1, 0, 1, 1),
-#                                                       ncol = 4, byrow = TRUE))
-# opt <- list(seed = 94352514, save = FALSE, save.graphs = FALSE)
-# m4 <- saemix(saemix_model, ab_mix, opt)
-# summary(m4)
-# # similar estimates of parameter values and sds
+#                                           dimnames = list(NULL, c('log_beta0', 'logit_beta1', 'phi',
+#                                                                   'logit_rho', 'log_r_1', 'log_r_2'))),
+#                             transform.par = c(0, 3, 0, 3, 0, 0),
+#                             fixed.estim = c(1, 1, 1, 1, 1, 1),
+#                             covariance.model = matrix(c(1, 0, 0, 0, 1, 0,
+#                                                         0, 0, 0, 0, 0, 0,
+#                                                         0, 0, 0, 0, 0, 0,
+#                                                         0, 0, 0, 0, 0, 0,
+#                                                         1, 0, 0, 0, 1, 0,
+#                                                         0, 0, 0, 0, 0, 0),
+#                                                       ncol = 6, byrow = TRUE))
+# 
+# opt <- list(seed = 94352514, save = FALSE, save.graphs = FALSE, nbiter.saemix = c(500, 200), maxim.maxiter = 200)
+# m8 <- saemix(saemix_model, ab_mix, opt)
+# summary(m8)
 
 # # brms:
 # ab_titers$logvalue <- log(ab_titers$value)
