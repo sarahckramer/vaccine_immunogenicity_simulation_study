@@ -8,10 +8,10 @@ from functions_python import *
 #######################################################################################################################
 
 # Set date:
-ymd = '20210210'
+ymd = '20210222'
 
 # Set global parameters:
-N_pop = 1000  # number of "participants"
+N_pop = 5000  # number of "participants"
 response_delay = 14  # 2 week delay in Ab response
 phi = np.float64(1.0)  # maximum in January
 maternal_antibodies_median = 8.0
@@ -25,7 +25,7 @@ vacc_timepoints = np.array([365])  # vaccinate between 12 and 15 months; can be 
 #######################################################################################################################
 
 # Read in input parameter values:
-input_params = pd.read_csv('data/inputs/lhs_params.txt', header=None, sep='\t')
+input_params = pd.read_csv('data/inputs/lhs_params_RED.txt', header=None, sep='\t')
 input_params = input_params.to_numpy(dtype=np.float64)
 
 #######################################################################################################################
@@ -107,14 +107,15 @@ for param_set in range(input_params.shape[0]):
         ###############################################################################################################
 
         # LOOP THROUGH NOISE AMOUNTS
-        for noise in [0.1, 0.2]:
-            print(noise)
+        # for noise in [0.1, 0.2]:
+        #     print(noise)
+        noise = 0.1
 
-            # Add random noise:
-            noisy_titers = add_random_noise(sim_titers, noise)
+        # Add random noise:
+        noisy_titers = add_random_noise(sim_titers, noise)
 
-            # Write synthetic data to file:
-            obs_vals = pd.DataFrame(noisy_titers)
-            obs_vals.to_csv('data/prelim_check_' + ymd + '/obs_data_' + str(param_set) + '_cv' + str(desired_cv) +
-                            '_noise' + str(noise) + '.csv',
-                            na_rep='NA', index=False)
+        # Write synthetic data to file:
+        obs_vals = pd.DataFrame(noisy_titers)
+        obs_vals.to_csv('data/prelim_check_' + ymd + '/obs_data_' + str(param_set) + '_cv' + str(desired_cv) +
+                        '_noise' + str(noise) + '.csv',
+                        na_rep='NA', index=False)
