@@ -8,7 +8,7 @@ from functions_python import *
 #######################################################################################################################
 
 # Set date:
-ymd = '20210222'
+ymd = '20210223'
 
 # Set global parameters:
 N_pop = 5000  # number of "participants"
@@ -109,7 +109,7 @@ for param_set in range(input_params.shape[0]):
         # LOOP THROUGH NOISE AMOUNTS
         # for noise in [0.1, 0.2]:
         #     print(noise)
-        noise = 0.1
+        noise = 0.2
 
         # Add random noise:
         noisy_titers = add_random_noise(sim_titers, noise)
