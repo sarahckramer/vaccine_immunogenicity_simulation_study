@@ -2,36 +2,6 @@
 # Functions to observe and analyze model fit
 # ---------------------------------------------------------------------------------------------------------------------
 
-viz_model_fit <- function(m, dat, logscale = F) {
-  # Function to plot the fitted values and residuals of an nlme object
-  # param m: The fitted model object
-  # param dat: The data frame used for model fitting
-  # param logscale: Was the model fit on a log scale? (Boolean)
-  
-  if (logscale == T) {
-    dat$fitted <- exp(fitted(m))
-  } else {
-    dat$fitted <- fitted(m)
-  }
-  
-  dat$residuals_fixed <- m$residuals[, 1]
-  dat$residuals_subject <- m$residuals[, 2]
-  
-  p1 <- ggplot(data = dat) + geom_line(aes(x = time, y = value, color = subject)) + geom_point(aes(x = time, y = fitted, color = subject)) +
-    theme_classic() + theme(legend.position = 'None') + labs(x = 'Time (Days)', y = 'Ab Titers') + 
-    scale_x_continuous(breaks = seq(0, max(dat$time), by = 60)) + scale_y_continuous(breaks = seq(0, max(dat$value), by = 1.0))#, trans = 'log')
-  
-  p21 <- ggplot(data = dat) + geom_point(aes(x = time, y = residuals_fixed, color = subject)) +
-    theme_classic() + theme(legend.position = 'None') + labs(x = 'Time (Days)', y = 'Residuals (Fixed)') +
-    scale_x_continuous(breaks = seq(0, max(dat$time), by = 60))
-  p22 <- ggplot(data = dat) + geom_point(aes(x = time, y = residuals_subject, color = subject)) +
-    theme_classic() + theme(legend.position = 'None') + labs(x = 'Time (Days)', y = 'Residuals (Subject)') +
-    scale_x_continuous(breaks = seq(0, max(dat$time), by = 60))
-  
-  grid.arrange(p1, p21, p22, layout_matrix = rbind(c(1, 1), c(1, 1), c(2, 3)))
-}
-
-
 get_param_est <- function(m, seasonal = FALSE) {
   # Function to format and return estimates from an nlme model fit
   # param m: The fitted model object
