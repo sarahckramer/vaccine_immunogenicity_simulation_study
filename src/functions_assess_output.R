@@ -2,7 +2,7 @@
 # Functions to observe and analyze model fit
 # ---------------------------------------------------------------------------------------------------------------------
 
-get_param_est <- function(m, seasonal = FALSE) {
+get_param_est <- function(m, seasonal = FALSE, r2const = FALSE) {
   # Function to format and return estimates from an nlme model fit
   # param m: The fitted model object
   # param seasonal: Is seasonality included in the model?
@@ -13,6 +13,12 @@ get_param_est <- function(m, seasonal = FALSE) {
     random.parms <- c('log_beta0', 'log_r_1', 'log_r_2')
     log.parms <- c('log_beta0', 'log_r_1', 'log_r_2')
     logit.parms <- c('logit_beta1', 'phi_hat', 'logit_rho')
+    
+    if (r2const) {
+      random.parms <- c('log_beta0', 'log_r_1')
+      log.parms <- c('log_beta0', 'log_r_1')
+    }
+    
   } else {
     random.parms <- c('log_beta', 'log_r_1', 'log_r_2')
     log.parms <- c('log_beta', 'log_r_1', 'log_r_2')
@@ -52,7 +58,11 @@ get_param_est <- function(m, seasonal = FALSE) {
   
   # Correct rownames to no longer say "log":
   if (seasonal) {
-    rownames(res.df) <- c('beta0', 'beta1', 'phi', 'rho', 'r_short', 'r_long')
+    if (r2const) {
+      rownames(res.df) <- c('beta0', 'beta1', 'phi', 'rho', 'r_short')
+    } else {
+      rownames(res.df) <- c('beta0', 'beta1', 'phi', 'rho', 'r_short', 'r_long')
+    }
   } else {
     rownames(res.df) <- c('beta', 'rho', 'r_short', 'r_long')
   }
