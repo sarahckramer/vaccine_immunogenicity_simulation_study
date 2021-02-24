@@ -9,10 +9,10 @@ from functions_python import *
 #######################################################################################################################
 
 # Set date:
-ymd = '20210202'
+ymd = '20210223'
 
 # Set global parameters:
-N_pop = 1000  # number of "participants"
+N_pop = 5000  # number of "participants"
 response_delay = 14  # 2 week delay in Ab response
 prop_short = np.float64(0.70)  # fit this as fixed for now
 beta_1 = np.float64(0.20)  # extent of seasonal variability in beta
@@ -26,7 +26,7 @@ half_life_short_median = 30.0  # days
 half_life_long_median = 3650.0  # days
 
 # Get standard deviation from desired coefficient of variations (var/mean of distribution):
-sd = calculate_sigma_from_cv(0.1)
+sd = calculate_sigma_from_cv(0.2)
 
 # Set start, end, and vaccination timepoints:
 tm_start = 0
@@ -105,7 +105,7 @@ true_vals.to_csv('data/prelim_check_' + ymd + '/truth.csv', na_rep='NA', index=F
 del true_vals
 
 # Add random noise:
-sim_titers = add_random_noise(sim_titers, 0.1)
+sim_titers = add_random_noise(sim_titers, 0.3)
 
 # # Plot noise-laden "data":
 # plt.figure()

@@ -2,37 +2,7 @@
 # Functions to observe and analyze model fit
 # ---------------------------------------------------------------------------------------------------------------------
 
-viz_model_fit <- function(m, dat, logscale = F) {
-  # Function to plot the fitted values and residuals of an nlme object
-  # param m: The fitted model object
-  # param dat: The data frame used for model fitting
-  # param logscale: Was the model fit on a log scale? (Boolean)
-  
-  if (logscale == T) {
-    dat$fitted <- exp(fitted(m))
-  } else {
-    dat$fitted <- fitted(m)
-  }
-  
-  dat$residuals_fixed <- m$residuals[, 1]
-  dat$residuals_subject <- m$residuals[, 2]
-  
-  p1 <- ggplot(data = dat) + geom_line(aes(x = time, y = value, color = subject)) + geom_point(aes(x = time, y = fitted, color = subject)) +
-    theme_classic() + theme(legend.position = 'None') + labs(x = 'Time (Days)', y = 'Ab Titers') + 
-    scale_x_continuous(breaks = seq(0, max(dat$time), by = 60)) + scale_y_continuous(breaks = seq(0, max(dat$value), by = 1.0))#, trans = 'log')
-  
-  p21 <- ggplot(data = dat) + geom_point(aes(x = time, y = residuals_fixed, color = subject)) +
-    theme_classic() + theme(legend.position = 'None') + labs(x = 'Time (Days)', y = 'Residuals (Fixed)') +
-    scale_x_continuous(breaks = seq(0, max(dat$time), by = 60))
-  p22 <- ggplot(data = dat) + geom_point(aes(x = time, y = residuals_subject, color = subject)) +
-    theme_classic() + theme(legend.position = 'None') + labs(x = 'Time (Days)', y = 'Residuals (Subject)') +
-    scale_x_continuous(breaks = seq(0, max(dat$time), by = 60))
-  
-  grid.arrange(p1, p21, p22, layout_matrix = rbind(c(1, 1), c(1, 1), c(2, 3)))
-}
-
-
-get_param_est <- function(m, seasonal = FALSE) {
+get_param_est <- function(m, seasonal = FALSE, r2const = FALSE) {
   # Function to format and return estimates from an nlme model fit
   # param m: The fitted model object
   # param seasonal: Is seasonality included in the model?
@@ -43,6 +13,12 @@ get_param_est <- function(m, seasonal = FALSE) {
     random.parms <- c('log_beta0', 'log_r_1', 'log_r_2')
     log.parms <- c('log_beta0', 'log_r_1', 'log_r_2')
     logit.parms <- c('logit_beta1', 'phi_hat', 'logit_rho')
+    
+    if (r2const) {
+      random.parms <- c('log_beta0', 'log_r_1')
+      log.parms <- c('log_beta0', 'log_r_1')
+    }
+    
   } else {
     random.parms <- c('log_beta', 'log_r_1', 'log_r_2')
     log.parms <- c('log_beta', 'log_r_1', 'log_r_2')
@@ -82,7 +58,11 @@ get_param_est <- function(m, seasonal = FALSE) {
   
   # Correct rownames to no longer say "log":
   if (seasonal) {
-    rownames(res.df) <- c('beta0', 'beta1', 'phi', 'rho', 'r_short', 'r_long')
+    if (r2const) {
+      rownames(res.df) <- c('beta0', 'beta1', 'phi', 'rho', 'r_short')
+    } else {
+      rownames(res.df) <- c('beta0', 'beta1', 'phi', 'rho', 'r_short', 'r_long')
+    }
   } else {
     rownames(res.df) <- c('beta', 'rho', 'r_short', 'r_long')
   }

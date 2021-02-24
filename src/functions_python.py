@@ -156,7 +156,7 @@ def calculate_Ab_titers_WhiteM3(t_start, t_end, tau, A_m, beta, d_m, d_a, d_s, d
 
 def add_random_noise(synth_titers, cv_natural):
     """
-    Adds normally-distributed noise to "true" antibody titer values
+    Adds lognormally-distributed noise to "true" antibody titer values
 
     :param synth_titers: "True" (synthetic) antibody titers for all timepoints (rows) and individuals (columns)
     :param cv_natural: Desired coefficient of variation on the natural scale
