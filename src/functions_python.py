@@ -98,6 +98,56 @@ def calculate_Ab_titers_biexp(t_start, t_end, tau, alpha, beta, d_m, d_s, d_l, r
     return Ab_titers
 
 
+def calculate_Ab_titers_monoexp(t_start, t_end, tau, alpha, beta, d_m, d_a, N, delay):
+    """
+    Calculates synthetic antibody titers at each time point for each participant according to a non-mechanistic
+    model accounting for biexponential antibody decay rates
+
+    :param t_start: First timepoint at which titers are calculated
+    :param t_end: Final timepoint at which titers are calculated (inclusive)
+    :param tau: Timepoints at which vaccine is given (1-D array)
+    :param alpha: Maternal antibody titers for each participant (1-D array)
+    :param beta: Individual-level values for beta at each vaccination timepoint (1 or 2-D array)
+    :param d_m: Half-life of maternal antibodies for each participant (1-D array)
+    :param d_a: Half-life of IgG antibodies for each participant (1-D array)
+    :param N: Size of the synthetic population
+    :param delay: Duration of delay between vaccination and antibody response
+    :return: Antibody titers for each time point (rows) and participant (columns)
+    """
+    # Start by calculating rates of decay from half-lives:
+    m = get_rate_from_half_life(d_m)
+    r = get_rate_from_half_life(d_a)
+
+    # Account for delay in antibody response to vaccination:
+    tau = tau + delay
+
+    # Store Ab titers at each time point:
+    Ab_titers = np.zeros([len(range(t_start, t_end + 1)), N])
+
+    # Loop through each timepoint and calculate:
+    t = t_start
+    while t <= t_end:
+        maternal_ab = alpha * np.exp(-m * t)
+        A_t = maternal_ab
+
+        # add antibody response to each dose that has been given so far
+        if t >= min(tau):
+            for i in np.where(tau <= t)[0]:
+                tau_i = tau[i]
+
+                vaccine_ab = beta[i] * np.exp(-r * (t - tau_i))
+                A_t = A_t + vaccine_ab
+
+        # append titers at this timepoint to list
+        Ab_titers[t] = A_t
+
+        # move forward one day
+        t += 1
+
+    # Return titers over time:
+    return Ab_titers
+
+
 def calculate_Ab_titers_WhiteM3(t_start, t_end, tau, A_m, beta, d_m, d_a, d_s, d_l, rho, N):
     """
     Calculates synthetic antibody titers at each time point for each participant according to model #3
