@@ -2,10 +2,12 @@
 # Functions to observe and analyze model fit
 # ---------------------------------------------------------------------------------------------------------------------
 
-get_param_est <- function(m, seasonal = FALSE, r2const = FALSE) {
+get_param_est <- function(m, seasonal = FALSE, mono = FALSE, r2const = FALSE) {
   # Function to format and return estimates from an nlme model fit
   # param m: The fitted model object
   # param seasonal: Is seasonality included in the model?
+  # param mono: Is model being fit mono-exponential (as opposed to biexponential)?
+  # param r2const: Is r2 held constant in fitting procedure?
   # returns: A data frame containing parameter estimates, 95% confidence intervals, and st. devs. of random effects
   
   # Specify random effects:
@@ -19,10 +21,22 @@ get_param_est <- function(m, seasonal = FALSE, r2const = FALSE) {
       log.parms <- c('log_beta0', 'log_r_1')
     }
     
+    if (mono) {
+      random.parms <- c('log_beta0', 'log_r')
+      log.parms <- c('log_beta0', 'log_r')
+      logit.parms <- c('logit_beta1', 'phi_hat')
+    }
+    
   } else {
     random.parms <- c('log_beta', 'log_r_1', 'log_r_2')
     log.parms <- c('log_beta', 'log_r_1', 'log_r_2')
     logit.parms <- 'logit_rho'
+    
+    if (mono) {
+      random.parms <- c('log_beta', 'log_r')
+      log.parms <- c('log_beta', 'log_r')
+      logit.parms <- NULL
+    }
   }
   
   # Extract results from model:
@@ -48,7 +62,9 @@ get_param_est <- function(m, seasonal = FALSE, r2const = FALSE) {
   res.df[logit.parms, 1] <- plogis(res.df[logit.parms, 1]) # inverse logit of all params on logit scale
   
   # Finish conversion for phi:
-  res.df['phi_hat', c(1, 3:4)] <- res.df['phi_hat', c(1, 3:4)] * 12
+  if (seasonal) {
+    res.df['phi_hat', c(1, 3:4)] <- res.df['phi_hat', c(1, 3:4)] * 12
+  }
   
   # Remove standard errors:
   res.df <- res.df[, c(1, 3:4)]
@@ -60,11 +76,17 @@ get_param_est <- function(m, seasonal = FALSE, r2const = FALSE) {
   if (seasonal) {
     if (r2const) {
       rownames(res.df) <- c('beta0', 'beta1', 'phi', 'rho', 'r_short')
+    } else if (mono) {
+      rownames(res.df) <- c('beta0', 'beta1', 'phi', 'r')
     } else {
       rownames(res.df) <- c('beta0', 'beta1', 'phi', 'rho', 'r_short', 'r_long')
     }
   } else {
-    rownames(res.df) <- c('beta', 'rho', 'r_short', 'r_long')
+    if (mono) {
+      rownames(res.df) <- c('beta', 'r')
+    } else {
+      rownames(res.df) <- c('beta', 'rho', 'r_short', 'r_long')
+    }
   }
   
   # Return results:
