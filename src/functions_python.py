@@ -101,7 +101,7 @@ def calculate_Ab_titers_biexp(t_start, t_end, tau, alpha, beta, d_m, d_s, d_l, r
 def calculate_Ab_titers_monoexp(t_start, t_end, tau, alpha, beta, d_m, d_a, N, delay):
     """
     Calculates synthetic antibody titers at each time point for each participant according to a non-mechanistic
-    model accounting for biexponential antibody decay rates
+    model accounting for monoexponential antibody decay rates
 
     :param t_start: First timepoint at which titers are calculated
     :param t_end: Final timepoint at which titers are calculated (inclusive)
