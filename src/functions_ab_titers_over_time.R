@@ -79,6 +79,42 @@ calculate_ab_titers_LOG_postOnly_seasonal <- function(time, v_time, log_beta0, l
 }
 
 
+calculate_ab_titers_LOG_postOnly_seasonal_MONO <- function(time, v_time, log_beta0, logit_beta1, phi_hat, log_r) {
+  # Calculates log of antibody titers over time using non-mechanistic, mono-exponential model, assuming maternal Ab
+  # negligible at vaccine timepoint
+  # param time: Time in days, with day of vaccine = 0
+  # param v_time: Month of initial vaccination (1-12 = Jan-Dec)
+  # param log_beta0: Natural log of the average boost in antibodies 2 weeks after vaccination
+  # param log_beta1: Logit of the magnitude of seasonal variation in antibody boost
+  # param phi_hat: A transformation of the month of maximal vaccine impact, such that phi (below) varies between 0 and 12
+  # param log_r: Natural log of the rate of antibody decay
+  # returns: The log of simulated antibody titers over time
+  
+  log_r[log_r > 500] <- 500 # otherwise r is Inf
+  
+  beta0 = exp(log_beta0)
+  beta1 = plogis(logit_beta1)
+  phi = 12 / (1 + exp(-phi_hat)) # or: plogis(phi_hat) * 12
+  r = exp(log_r)
+  
+  # if (any(is.na(beta1))) beta1[is.na(beta1)] <- 0.15
+  # if (any(is.na(phi))) phi[is.na(phi)] <- 2.0
+  
+  beta = beta0 * (1 + beta1 * cos((2 * pi / 12) * (v_time - phi)))
+  if (any(is.na(beta))) {
+    print('NAs in beta!')
+  }
+  
+  value <- beta * exp(-r * (time - 14))
+  if (any(is.na(value))) {
+    print('NAs in output!')
+  }
+  value[value == 0] <- 1e-323 # any lower will give NAs
+  
+  return(log(value))
+}
+
+
 calculate_ab_titers_LOG_postOnly_seasonal_r2const <- function(time, v_time, log_beta0, logit_beta1, phi_hat, logit_rho, log_r_1) {
   # Calculates log of antibody titers over time using non-mechanistic, bi-exponential model, assuming maternal Ab
   # negligible at vaccine timepoint
@@ -136,6 +172,31 @@ calculate_ab_titers_LOG_postOnly <- function(time, log_beta, logit_rho, log_r_1,
   r_2 = exp(log_r_2)
   
   value <- beta * (rho * exp(-(r_1 + r_2) * (time - 14)) + (1 - rho) * exp(-r_2 * (time - 14)))
+  
+  if (any(is.na(value))) {
+    print('NAs in output!')
+  }
+  
+  value[value == 0] <- 1e-323 # any lower will give NAs
+  
+  return(log(value))
+}
+
+
+calculate_ab_titers_LOG_postOnly_MONO <- function(time, log_beta, log_r) {
+  # Calculates log of antibody titers over time using non-mechanistic, mono-exponential model, assuming maternal Ab
+  # negligible at vaccine timepoint
+  # param time: Time in days, with day of vaccine = 0
+  # param log_beta: Natural log of the boost in antibodies 2 weeks after vaccination
+  # param log_r: Natural log of the rate of antibody decay
+  # returns: The log of simulated antibody titers over time
+  
+  log_r[log_r > 500] <- 500 # otherwise r is Inf
+  
+  beta = exp(log_beta)
+  r = exp(log_r)
+  
+  value <- beta * exp(-r * (time - 14))
   
   if (any(is.na(value))) {
     print('NAs in output!')
