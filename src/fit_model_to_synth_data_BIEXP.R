@@ -53,13 +53,13 @@ for (n in n_participants) {
   
   # Try to first fit w/o seasonality:
   m1 <- try(
-    nlme(log(value) ~ calculate_ab_titers_LOG_postOnly(time, log_beta, logit_rho, log_r_1, log_r_2),
-             data = ab_titers,
-             fixed = log_beta + logit_rho + log_r_1 + log_r_2 ~ 1,
-             random = pdDiag(log_beta + log_r_1 + log_r_2 ~ 1),
-             groups = ~subject,
-             start = c(log_beta = log(18.0), logit_rho = qlogis(0.75), log_r_1 = log(log(2)/30),
-                       log_r_2 = log(log(2)/3650)))
+    nlme(log(value) ~ calculate_ab_titers_LOG_postOnly(time, log_beta, log_r_1, log_r_2, logit_rho),
+         data = ab_titers,
+         fixed = log_beta + log_r_1 + log_r_2 + logit_rho ~ 1,
+         random = pdDiag(log_beta + log_r_1 + log_r_2 ~ 1),
+         groups = ~subject,
+         start = c(log_beta = log(18.0), log_r_1 = log(log(2)/30),
+                   log_r_2 = log(log(2)/3650), logit_rho = qlogis(0.75)))
   )
   
   # Check whether random effects associated with season of vaccination:
@@ -72,15 +72,15 @@ for (n in n_participants) {
   
   # Now fit seasonal model:
   m2 <- try(
-    nlme(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal(time, vacc_month, log_beta0, logit_beta1, phi_hat,
-                                                                    logit_rho, log_r_1, log_r_2),
-             data = ab_titers,
-             fixed = log_beta0 + logit_beta1 + phi_hat + logit_rho + log_r_1 + log_r_2 ~ 1,
-             random = pdDiag(log_beta0 + log_r_1 + log_r_2 ~ 1),
-             groups = ~subject,
-             start = c(log_beta0 = log(18.0), logit_beta1 = qlogis(0.1), phi_hat = qlogis(1/12),
-                       logit_rho = qlogis(0.75), log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
-    )
+    nlme(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal(time, vacc_month, log_beta0, logit_beta1,
+                                                                phi_hat, log_r_1, log_r_2, logit_rho),
+         data = ab_titers,
+         fixed = log_beta0 + logit_beta1 + phi_hat + log_r_1 + log_r_2 + logit_rho ~ 1,
+         random = pdDiag(log_beta0 + log_r_1 + log_r_2 ~ 1),
+         groups = ~subject,
+         start = c(log_beta0 = log(18.0), logit_beta1 = qlogis(0.1), phi_hat = qlogis(1/12),
+                   log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650), logit_rho = qlogis(0.75)))
+  )
   
   # If fit fails, try selecting another subset of subjects:
   counter = 0
@@ -91,14 +91,14 @@ for (n in n_participants) {
     ab_titers <- format_synth_data(ab_titers_ORIG, vacc_month, n, select_timepoints)
     
     m2 <- try(
-      nlme(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal(time, vacc_month, log_beta0, logit_beta1, phi_hat,
-                                                                  logit_rho, log_r_1, log_r_2),
+      nlme(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal(time, vacc_month, log_beta0, logit_beta1,
+                                                                  phi_hat, log_r_1, log_r_2, logit_rho),
            data = ab_titers,
-           fixed = log_beta0 + logit_beta1 + phi_hat + logit_rho + log_r_1 + log_r_2 ~ 1,
+           fixed = log_beta0 + logit_beta1 + phi_hat + log_r_1 + log_r_2 + logit_rho ~ 1,
            random = pdDiag(log_beta0 + log_r_1 + log_r_2 ~ 1),
            groups = ~subject,
            start = c(log_beta0 = log(18.0), logit_beta1 = qlogis(0.1), phi_hat = qlogis(1/12),
-                     logit_rho = qlogis(0.75), log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
+                     log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650), logit_rho = qlogis(0.75)))
     )
   }
   

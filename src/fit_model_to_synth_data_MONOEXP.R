@@ -42,7 +42,7 @@ vacc_month <- read.csv('data/prelim_check_20210225/vacc_months_MONO.csv', header
 set.seed(3970395)
 
 # Reformat data frame:
-ab_titers <- format_synth_data(ab_titers_ORIG, vacc_month, 5000, select_timepoints[[1]])
+ab_titers <- format_synth_data(ab_titers_ORIG, vacc_month, 50, select_timepoints[[1]])
 
 # # Plot data:
 # p1 <- ggplot(data = ab_titers, aes(x = time, y = value, color = subject)) + geom_line() + geom_point() +
@@ -54,26 +54,12 @@ ab_titers <- format_synth_data(ab_titers_ORIG, vacc_month, 5000, select_timepoin
 
 # Fit w/o seasonality -------------------------------------------------------------------------------------------------
 
-# First fit without random effects:
-m1 <- nls(log(value) ~ calculate_ab_titers_LOG_postOnly_MONO(time, log_beta, log_r),
-          data = ab_titers,
-          start = c(log_beta = log(18.0), log_r = log(log(2)/365)))
-
-# Next try nlsList (separate fits for each person):
-m2 <- nlsList(log(value) ~ calculate_ab_titers_LOG_postOnly_MONO(time, log_beta, log_r) | subject,
-              data = ab_titers,
-              start = c(log_beta = log(18.0), log_r = log(log(2)/365)))
-# plot(intervals(m2))
-# plot(m2, subject ~ resid(.), abline = 0 )
-pairs(m2)
-
-# Fit nlme:
-m3 <- nlme(log(value) ~ calculate_ab_titers_LOG_postOnly_MONO(time, log_beta, log_r),
+m3 <- nlme(log(value) ~ calculate_ab_titers_LOG_postOnly(time, log_beta, log_r_1, mono = TRUE),
            data = ab_titers,
-           fixed = log_beta + log_r ~ 1,
-           random = pdDiag(log_beta + log_r ~ 1),
+           fixed = log_beta + log_r_1 ~ 1,
+           random = pdDiag(log_beta + log_r_1 ~ 1),
            groups = ~subject,
-           start = c(log_beta = log(18.0), log_r = log(log(2)/365)))
+           start = c(log_beta = log(18.0), log_r_1 = log(log(2)/365)))
 plot(m3)
 pairs(m3)
 qqnorm(m3, abline = c(0, 1))
@@ -87,29 +73,15 @@ plot(rand_effects) # clear seasonal patterns in beta estimates
 
 # Fit model including seasonality -------------------------------------------------------------------------------------
 
-# First without random effects:
-m4 <- nls(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal_MONO(time, vacc_month, log_beta0, logit_beta1,
-                                                                      phi_hat, log_r),
-          data = ab_titers,
-          start = c(log_beta0 = log(18.0), logit_beta1 = qlogis(0.15), phi_hat = qlogis(2/12),
-                    log_r = log(log(2)/60)))
-
-# m5 <- nlsList(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal_MONO(time, vacc_month, log_beta0, logit_beta1,
-#                                                                           phi_hat, log_r) | subject,
-#               data = ab_titers,
-#               start = c(log_beta0 = log(18.0), logit_beta1 = qlogis(0.15), phi_hat = qlogis(2/12),
-#                         log_r = log(log(2)/365)))
-# plot(intervals(m5))
-# pairs(m5)
-
-m6 <- nlme(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal_MONO(time, vacc_month, log_beta0,
-                                                                       logit_beta1, phi_hat, log_r),
+m6 <- nlme(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal(time, vacc_month, log_beta0,
+                                                                  logit_beta1, phi_hat, log_r_1,
+                                                                  mono = TRUE),
            data = ab_titers,
-           fixed = log_beta0 + logit_beta1 + phi_hat + log_r ~ 1,
-           random = pdDiag(log_beta0 + log_r ~ 1),
+           fixed = log_beta0 + logit_beta1 + phi_hat + log_r_1 ~ 1,
+           random = pdDiag(log_beta0 + log_r_1 ~ 1),
            groups = ~subject,
            start = c(log_beta0 = log(18.0), logit_beta1 = qlogis(0.1), phi_hat = qlogis(1/12),
-                     log_r = log(log(2)/365)))
+                     log_r_1 = log(log(2)/365)))
 
 plot(m6)
 pairs(m6)
