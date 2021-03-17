@@ -22,8 +22,8 @@ get_param_est <- function(m, seasonal = FALSE, mono = FALSE, r2const = FALSE) {
     }
     
     if (mono) {
-      random.parms <- c('log_beta0', 'log_r')
-      log.parms <- c('log_beta0', 'log_r')
+      random.parms <- c('log_beta0', 'log_r_1')
+      log.parms <- c('log_beta0', 'log_r_1')
       logit.parms <- c('logit_beta1', 'phi_hat')
     }
     
@@ -33,8 +33,8 @@ get_param_est <- function(m, seasonal = FALSE, mono = FALSE, r2const = FALSE) {
     logit.parms <- 'logit_rho'
     
     if (mono) {
-      random.parms <- c('log_beta', 'log_r')
-      log.parms <- c('log_beta', 'log_r')
+      random.parms <- c('log_beta', 'log_r_1')
+      log.parms <- c('log_beta', 'log_r_1')
       logit.parms <- NULL
     }
   }
