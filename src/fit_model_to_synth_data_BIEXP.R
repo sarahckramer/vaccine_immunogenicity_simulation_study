@@ -5,6 +5,8 @@
 
 # Setup ---------------------------------------------------------------------------------------------------------------
 
+dev.off()
+
 # Load libraries:
 library(reshape2)
 library(nlme)
@@ -38,7 +40,6 @@ for (n in n_participants) {
   print(n)
   
   # Set seed so that same subjects chosen each time:
-  # set.seed(3970395)
   set.seed(3970396)
   
   # Reformat data frame:
@@ -117,8 +118,6 @@ for (n in n_participants) {
   # Do we need random effect of r2?:
   m3 <- update(m2, random = pdDiag(log_beta0 + log_r_1 ~ 1))
   if (noisy) print(anova(m2, m3))
-  
-  # Get and output results ----------------------------------------------------------------------------------------------
   
   # Extract parameter fits and random effect sds:
   results.df <- get_param_est(m2, seasonal = TRUE)
