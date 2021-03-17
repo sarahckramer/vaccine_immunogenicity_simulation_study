@@ -8,9 +8,6 @@ from functions_python import *
 
 #######################################################################################################################
 
-# Set date:
-ymd = '20210225'
-
 # Set global parameters:
 N_pop = 5000  # number of "participants"
 response_delay = 14  # 2 week delay in Ab response
@@ -66,26 +63,14 @@ betas = beta_0s * (1 + beta_1 * np.cos((2 * np.pi / 12) * (vacc_months - phi)))
 sim_titers = calculate_Ab_titers_monoexp(tm_start, tm_end, vacc_timepoints, maternal_antibodies, betas,
                                          half_life_maternal, half_life_ab, N_pop, response_delay)
 
-# # Plot simulated "data":
-# if not os.path.isdir('results/PRELIM_plotTiters_' + ymd + '/'):
-#     os.mkdir('results/PRELIM_plotTiters_' + ymd + '/')
-#
-# plt.figure()
-# plt.plot(sim_titers)
-# plt.yscale('log')
-# plt.xlabel('Time (Days)')
-# plt.ylabel('Ab Titers')
-# plt.tight_layout()
-# plt.savefig('results/PRELIM_plotTiters_' + ymd + '/ab_titers_over_time.png', dpi=300)
-
 # Write "true" values to file:
 if not os.path.isdir('data/'):
     os.mkdir('data/')
-if not os.path.isdir('data/prelim_check_' + ymd + '/'):
-    os.mkdir('data/prelim_check_' + ymd + '/')
+if not os.path.isdir('data/synth_ab_kinetics/'):
+    os.mkdir('data/synth_ab_kinetics/')
 
 true_vals = pd.DataFrame(sim_titers)
-true_vals.to_csv('data/prelim_check_' + ymd + '/truth_MONO.csv', na_rep='NA', index=False)
+true_vals.to_csv('data/synth_ab_kinetics/truth_MONO.csv', na_rep='NA', index=False)
 del true_vals
 
 # Add random noise:
@@ -93,8 +78,8 @@ sim_titers = add_random_noise(sim_titers, 0.3)
 
 # Write synthetic data to file:
 obs_vals = pd.DataFrame(sim_titers)
-obs_vals.to_csv('data/prelim_check_' + ymd + '/obs_data_MONO.csv', na_rep='NA', index=False)
+obs_vals.to_csv('data/synth_ab_kinetics/obs_data_MONO.csv', na_rep='NA', index=False)
 
 # Write month of vaccine to file:
 vacc_months = pd.DataFrame(vacc_months)
-vacc_months.to_csv('data/prelim_check_' + ymd + '/vacc_months_MONO.csv', na_rep='NA', index=False, header=False)
+vacc_months.to_csv('data/synth_ab_kinetics/vacc_months_MONO.csv', na_rep='NA', index=False, header=False)

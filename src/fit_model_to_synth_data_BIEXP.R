@@ -11,12 +11,12 @@ library(nlme)
 library(ggplot2)
 library(gridExtra)
 
-# Specify date (for results outputs):
-ymd <- '20210317'
-
 # Set participant #'s/timepoints to test:
 n_participants <- c(25, 50, 100, 250, 500, 1000, 2000, 5000)
 select_timepoints <- c(379, 730, 1095, 2190)
+
+# Output plots/results as the code runs?:
+noisy <- TRUE
 
 # Read in functions ---------------------------------------------------------------------------------------------------
 
@@ -26,11 +26,11 @@ source('src/functions_assess_output.R')
 # Read in/format data -------------------------------------------------------------------------------------------------
 
 # Read in noise-laden "data":
-ab_titers <- read.csv('data/prelim_check_20210223/obs_data.csv')
+ab_titers <- read.csv('data/synth_ab_kinetics/obs_data.csv')
 ab_titers_ORIG <- ab_titers
 
 # Read in month of vaccination:
-vacc_month <- read.csv('data/prelim_check_20210223/vacc_months.csv', header = FALSE)
+vacc_month <- read.csv('data/synth_ab_kinetics/vacc_months.csv', header = FALSE)
 
 # Loop through participant numbers and fit ----------------------------------------------------------------------------
 
@@ -63,7 +63,7 @@ for (n in n_participants) {
   )
   
   # Check whether random effects associated with season of vaccination:
-  if (class(m1)[1] != 'try-error') {
+  if (class(m1)[1] != 'try-error' & noisy) {
     rand_effects <- ranef(m1)
     rand_effects$subject <- rownames(rand_effects)
     rand_effects <- merge(rand_effects, unique(ab_titers[, c('subject', 'vacc_month')]), by = 'subject')
@@ -106,26 +106,31 @@ for (n in n_participants) {
   if (class(m2)[1] == 'try-error') next
   
   # Review model diagnostics:
-  plot(m2)
-  qqnorm(m2, abline = c(0, 1))
-  pairs(m2)
-  if (class(m1)[1] != 'try-error' & counter == 0) anova(m1, m2)
+  if (noisy) {
+    print(plot(m2))
+    print(qqnorm(m2, abline = c(0, 1)))
+    print(pairs(m2))
+    if (class(m1)[1] != 'try-error' & counter == 0) print(anova(m1, m2))
+  }
   
   # Do we need random effect of r2?:
   m3 <- update(m2, random = pdDiag(log_beta0 + log_r_1 ~ 1))
-  anova(m2, m3)
+  if (noisy) print(anova(m2, m3))
   
   # Get and output results ----------------------------------------------------------------------------------------------
   
   # Extract parameter fits and random effect sds:
   results.df <- get_param_est(m2, seasonal = TRUE)
-  print(results.df)
+  if (noisy) print(results.df)
   
-  if (!dir.exists(paste0('results/PRELIM_nlme_res_', ymd, '/'))) {
-    dir.create(paste0('results/PRELIM_nlme_res_', ymd, '/'))
+  if (!dir.exists('results/')) {
+    dir.create('results/')
   }
-  write.csv(results.df, file = paste0('results/PRELIM_nlme_res_', ymd, '/res_n', n_participants, '.csv'),
-            row.names = FALSE)
+  if (!dir.exists('results/ab_kinetics_res/')) {
+    dir.create('results/ab_kinetics_res/')
+  }
+  
+  write.csv(results.df, file = paste0('results/ab_kinetics_res/res_n', n, '.csv'))#, row.names = FALSE)
   
   # Clean up:
   rm(m1, m2, m3)
@@ -139,4 +144,4 @@ for (n in n_participants) {
 # Clean up ------------------------------------------------------------------------------------------------------------
 
 rm(list = ls())
-dev.off()
+# dev.off()

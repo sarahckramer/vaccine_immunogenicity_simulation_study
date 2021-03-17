@@ -11,18 +11,18 @@ library(nlme)
 library(ggplot2)
 library(gridExtra)
 
-# Specify date (for results outputs):
-ymd <- '20210223'
+# Set participant #'s/timepoints to test:
+n_participants <- c(25, 50, 100, 250, 500, 1000, 2000, 5000)
+select_timepoints <- c(379, 730, 1095, 2190)
 
-# Set timepoints to select/test:
-select_timepoints <- list(c(379, 730, 1095, 2190),
-                          c(379, 730, 1095, 3650),
-                          c(379, 730, 1095),
-                          c(379, 730, 2190),
-                          c(379, 548, 730),
-                          c(379, 548, 1095),
-                          c(379, 730),
-                          c(379, 1095))
+# # Alternate timepoints to check:
+# select_timepoints <- list(c(379, 730, 1095, 3650),
+#                           c(379, 730, 1095),
+#                           c(379, 730, 2190),
+#                           c(379, 548, 730),
+#                           c(379, 548, 1095),
+#                           c(379, 730),
+#                           c(379, 1095))
 
 # Read in functions ---------------------------------------------------------------------------------------------------
 
@@ -107,13 +107,14 @@ rm(m7, m8)
 results.df <- get_param_est(m6, seasonal = TRUE, mono = TRUE)
 print(results.df)
 
-# if (!dir.exists(paste0('results/PRELIM_nlme_res_', ymd, '/'))) {
-#   dir.create(paste0('results/PRELIM_nlme_res_', ymd, '/'))
-# }
-# 
-# write.csv(results.df, file = paste0('results/PRELIM_nlme_res_', ymd, '/res_n', n_participants, '_t',
-#                                     sample_interval, '_MONO.csv'),
-#           row.names = FALSE)
+if (!dir.exists('results/')) {
+  dir.create('results/')
+}
+if (!dir.exists('results/ab_kinetics_res/')) {
+  dir.create('results/ab_kinetics_res/')
+}
+
+write.csv(results.df, file = paste0('results/ab_kinetics_res/res_n', n_participants, '_MONO.csv'))
 
 # Potentially useful references ---------------------------------------------------------------------------------------
 
