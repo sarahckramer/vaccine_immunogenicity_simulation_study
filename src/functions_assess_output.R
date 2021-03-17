@@ -75,17 +75,17 @@ get_param_est <- function(m, seasonal = FALSE, mono = FALSE, r2const = FALSE) {
   # Correct rownames to no longer say "log":
   if (seasonal) {
     if (r2const) {
-      rownames(res.df) <- c('beta0', 'beta1', 'phi', 'rho', 'r_short')
+      rownames(res.df) <- c('beta0', 'beta1', 'phi', 'r_short', 'rho')
     } else if (mono) {
       rownames(res.df) <- c('beta0', 'beta1', 'phi', 'r')
     } else {
-      rownames(res.df) <- c('beta0', 'beta1', 'phi', 'rho', 'r_short', 'r_long')
+      rownames(res.df) <- c('beta0', 'beta1', 'phi', 'r_short', 'r_long', 'rho')
     }
   } else {
     if (mono) {
       rownames(res.df) <- c('beta', 'r')
     } else {
-      rownames(res.df) <- c('beta', 'rho', 'r_short', 'r_long')
+      rownames(res.df) <- c('beta', 'r_short', 'r_long', 'rho')
     }
   }
   
