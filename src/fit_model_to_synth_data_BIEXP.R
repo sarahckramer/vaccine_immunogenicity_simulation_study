@@ -38,7 +38,8 @@ for (n in n_participants) {
   print(n)
   
   # Set seed so that same subjects chosen each time:
-  set.seed(3970395)
+  # set.seed(3970395)
+  set.seed(3970396)
   
   # Reformat data frame:
   ab_titers <- format_synth_data(ab_titers_ORIG, vacc_month, n, select_timepoints)

@@ -39,7 +39,7 @@ ab_titers_ORIG <- ab_titers
 vacc_month <- read.csv('data/prelim_check_20210225/vacc_months_MONO.csv', header = FALSE)
 
 # Set seed so that same subjects chosen each time:
-set.seed(3970395)
+set.seed(3970396)
 
 # Reformat data frame:
 ab_titers <- format_synth_data(ab_titers_ORIG, vacc_month, 50, select_timepoints[[1]])
