@@ -69,11 +69,6 @@ calculate_ab_titers_LOG_postOnly_seasonal <- function(time, v_time, log_beta0, l
     rho = 1.0
     r_2 = 0.0
   }
-  if (r2const) r_2 = log(2) / 3650.0
-  
-  # if (any(is.na(beta1))) beta1[is.na(beta1)] <- 0.15
-  # if (any(is.na(phi))) phi[is.na(phi)] <- 2.0
-  # if (any(is.na(r_2))) r_2[is.na(r_2)] <- 1e-323
 
   beta = beta0 * (1 + beta1 * cos((2 * pi / 12) * (v_time - phi)))
   if (any(is.na(beta))) {
@@ -114,7 +109,6 @@ calculate_ab_titers_LOG_postOnly <- function(time, log_beta, log_r_1, log_r_2 = 
     rho = 1.0
     r_2 = 0.0
   }
-  if (r2const) r_2 = log(2) / 3650.0
   
   value <- beta * (rho * exp(-(r_1 + r_2) * (time - 14)) + (1 - rho) * exp(-r_2 * (time - 14)))
   
