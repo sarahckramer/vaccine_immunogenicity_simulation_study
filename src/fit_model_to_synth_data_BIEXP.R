@@ -5,12 +5,7 @@
 
 # Setup ---------------------------------------------------------------------------------------------------------------
 
-# # Install needed packages and update renv lock file:
-# install.packages('reshape2')
-# install.packages('nlme')
-# install.packages('lme4')
-# install.packages('ggplot2')
-# renv::snapshot()
+dev.off()
 
 # Load libraries:
 library(reshape2)
@@ -18,21 +13,12 @@ library(nlme)
 library(ggplot2)
 library(gridExtra)
 
-# Specify date (for results outputs):
-ymd <- '20210223'
+# Set participant #'s/timepoints to test:
+n_participants <- c(25, 50, 100, 250, 500, 1000, 2000, 5000)
+select_timepoints <- c(379, 730, 1095, 2190)
 
-# Set timepoints to select/test:
-# select_timepoints <- list(c(379, seq(379+21, 1090, by = 30)),
-#                           c(379, seq(379+51, 1090, by = 60)),
-#                           c(379, seq(379 + 111, 1090, by = 120)),
-#                           # c(379, 550, 730, 1095),
-#                           c(379, 730, 1095, 2190))
-select_timepoints <- list(c(379, 730, 1095, 2190),
-                          c(379, 730, 1095, 3650),
-                          c(379, 730, 1095),
-                          c(379, 730, 2190),
-                          c(379, 548, 730),
-                          c(379, 548, 1095))
+# Output plots/results as the code runs?:
+noisy <- TRUE
 
 # Read in functions ---------------------------------------------------------------------------------------------------
 
@@ -42,222 +28,117 @@ source('src/functions_assess_output.R')
 # Read in/format data -------------------------------------------------------------------------------------------------
 
 # Read in noise-laden "data":
-ab_titers <- read.csv('data/prelim_check_20210223/obs_data_3.csv')
+ab_titers <- read.csv('data/synth_ab_kinetics/obs_data.csv')
 ab_titers_ORIG <- ab_titers
 
 # Read in month of vaccination:
-vacc_month <- read.csv('data/prelim_check_20210223/vacc_months_3.csv', header = FALSE)
+vacc_month <- read.csv('data/synth_ab_kinetics/vacc_months.csv', header = FALSE)
 
-# Set seed so that same subjects chosen each time:
-set.seed(3970395)
+# Loop through participant numbers and fit ----------------------------------------------------------------------------
 
-# Reformat data frame:
-ab_titers <- format_synth_data(ab_titers_ORIG, vacc_month, 5000, select_timepoints[[1]])
-
-# # Plot data:
-# p1 <- ggplot(data = ab_titers, aes(x = time, y = value, color = subject)) + geom_line() + geom_point() +
-#   # geom_vline(xintercept = 0, lty = 2) +
-#   theme_classic() + theme(legend.position = 'None') + labs(x = 'Time (Days)', y = 'Ab Titers') +
-#   scale_x_continuous(breaks = seq(0, max(ab_titers$time), by = 30)) +
-#   scale_y_continuous(breaks = seq(0, max(ab_titers$value), by = 1.0))#, trans = 'log')
-# print(p1)
-
-# Fit w/o seasonality -------------------------------------------------------------------------------------------------
-
-# First fit without random effects:
-m1 <- nls(log(value) ~ calculate_ab_titers_LOG_postOnly(time, log_beta, logit_rho, log_r_1, log_r_2),
-          data = ab_titers,
-          start = c(log_beta = log(18.0), logit_rho = qlogis(0.75), log_r_1 = log(log(2)/30),
-                    log_r_2 = log(log(2)/3650)))
-# m1.alt <- nls(log(value) ~ calculate_ab_titers_LOG_postOnly_r2const(time, log_beta, logit_rho, log_r_1),
-#               data = ab_titers,
-#               start = c(log_beta = log(18.0), logit_rho = qlogis(0.75), log_r_1 = log(log(2)/30)))
-
-# Next try nlsList (separate fits for each person):
-m2 <- nlsList(log(value) ~ calculate_ab_titers_LOG_postOnly(time, log_beta, logit_rho, log_r_1, log_r_2) | subject,
-              data = ab_titers,
-              start = c(log_beta = log(18.0), logit_rho = qlogis(0.75), log_r_1 = log(log(2)/30),
-                        log_r_2 = log(log(2)/3650)))
-# plot(intervals(m2))
-# plot(m2, subject ~ resid(.), abline = 0 )
-# pairs(m2)
-
-# Fit nlme:
-m3 <- nlme(log(value) ~ calculate_ab_titers_LOG_postOnly(time, log_beta, logit_rho, log_r_1, log_r_2),
+for (n in n_participants) {
+  print(n)
+  
+  # Set seed so that same subjects chosen each time:
+  set.seed(3970396)
+  
+  # Reformat data frame:
+  ab_titers <- format_synth_data(ab_titers_ORIG, vacc_month, n, select_timepoints)
+  
+  # # Plot data:
+  # p1 <- ggplot(data = ab_titers, aes(x = time, y = value, color = subject)) + geom_line() + geom_point() +
+  #   # geom_vline(xintercept = 0, lty = 2) +
+  #   theme_classic() + theme(legend.position = 'None') + labs(x = 'Time (Days)', y = 'Ab Titers') +
+  #   scale_x_continuous(breaks = seq(0, max(ab_titers$time), by = 30)) +
+  #   scale_y_continuous(breaks = seq(0, max(ab_titers$value), by = 1.0))#, trans = 'log')
+  # print(p1)
+  
+  # Try to first fit w/o seasonality:
+  m1 <- try(
+    nlme(log(value) ~ calculate_ab_titers_LOG_postOnly(time, log_beta, log_r_1, log_r_2, logit_rho),
+         data = ab_titers,
+         fixed = log_beta + log_r_1 + log_r_2 + logit_rho ~ 1,
+         random = pdDiag(log_beta + log_r_1 + log_r_2 ~ 1),
+         start = c(log_beta = log(18.0), log_r_1 = log(log(2)/30),
+                   log_r_2 = log(log(2)/3650), logit_rho = qlogis(0.75)))
+  )
+  
+  # Check whether random effects associated with season of vaccination:
+  if (class(m1)[1] != 'try-error' & noisy) {
+    rand_effects <- ranef(m1)
+    rand_effects$subject <- rownames(rand_effects)
+    rand_effects <- merge(rand_effects, unique(ab_titers[, c('subject', 'vacc_month')]), by = 'subject')
+    plot(rand_effects) # generally, clear seasonal patterns in beta estimates
+  }
+  
+  # Now fit seasonal model:
+  m2 <- try(
+    nlme(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal(time, vacc_month, log_beta0, logit_beta1,
+                                                                phi_hat, log_r_1, log_r_2, logit_rho),
+         data = ab_titers,
+         fixed = log_beta0 + logit_beta1 + phi_hat + log_r_1 + log_r_2 + logit_rho ~ 1,
+         random = pdDiag(log_beta0 + log_r_1 + log_r_2 ~ 1),
+         start = c(log_beta0 = log(18.0), logit_beta1 = qlogis(0.1), phi_hat = qlogis(1/12),
+                   log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650), logit_rho = qlogis(0.75)))
+  )
+  
+  # If fit fails, try selecting another subset of subjects:
+  counter = 0
+  while (class(m2)[1] == 'try-error' & counter < 10) {
+    counter <- counter + 1
+    print(counter)
+    
+    ab_titers <- format_synth_data(ab_titers_ORIG, vacc_month, n, select_timepoints)
+    
+    m2 <- try(
+      nlme(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal(time, vacc_month, log_beta0, logit_beta1,
+                                                                  phi_hat, log_r_1, log_r_2, logit_rho),
            data = ab_titers,
-           fixed = log_beta + logit_rho + log_r_1 + log_r_2 ~ 1,
-           random = pdDiag(log_beta + log_r_1 + log_r_2 ~ 1),
-           groups = ~subject,
-           start = c(log_beta = log(18.0), logit_rho = qlogis(0.75), log_r_1 = log(log(2)/30),
-                     log_r_2 = log(log(2)/3650)))
-# m3.alt <- nlme(log(value) ~ calculate_ab_titers_LOG_postOnly_r2const(time, log_beta, logit_rho, log_r_1),
-#                data = ab_titers,
-#                fixed = log_beta + logit_rho + log_r_1 ~ 1,
-#                random = pdDiag(log_beta + log_r_1 ~ 1),
-#                groups = ~subject,
-#                start = c(log_beta = log(18.0), logit_rho = qlogis(0.75), log_r_1 = log(log(2)/30)))
-# m3.alt <- nlme(m2, random = pdDiag(log_beta + log_r_1 + log_r_2 ~ 1)) # fit is very similar
-# plot(m3) # evidence of some increase in variance with values higher than about 1.5
-# # plot(m3, resid(.) ~ log(value), abline = 0)
-# # plot(m3, resid(.) ~ time, abline = 0)
-# pairs(m3) # r_1 and r_2 might be correlated - explore whether both random effects are needed
-# qqnorm(m3, abline = c(0, 1)) # looks better when more data points are included
-# # qqnorm(m3, ~ ranef(.))
-
-# Check whether random effects associated with season of vaccination:
-rand_effects <- ranef(m3)
-rand_effects$subject <- rownames(rand_effects)
-rand_effects <- merge(rand_effects, unique(ab_titers[, c('subject', 'vacc_month')]), by = 'subject')
-plot(rand_effects) # clear seasonal patterns in beta estimates
-
-# Fit model including seasonality -------------------------------------------------------------------------------------
-
-# First without random effects:
-m4 <- nls(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal(time, vacc_month, log_beta0, logit_beta1, phi_hat,
-                                                                 logit_rho, log_r_1, log_r_2),
-          data = ab_titers,
-          start = c(log_beta0 = log(18.0), logit_beta1 = qlogis(0.15), phi_hat = qlogis(2/12),
-                    logit_rho = qlogis(0.75), log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
-# m4.alt <- nls(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal_r2const(time, vacc_month, log_beta0, logit_beta1,
-#                                                                              phi_hat, logit_rho, log_r_1),
-#           data = ab_titers,
-#           start = c(log_beta0 = log(18.0), logit_beta1 = qlogis(0.15), phi_hat = qlogis(2/12),
-#                     logit_rho = qlogis(0.75), log_r_1 = log(log(2)/30)))
-
-# m5 <- nlsList(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal(time, vacc_month, log_beta0, logit_beta1, phi_hat,
-#                                                                      logit_rho, log_r_1, log_r_2) | subject,
-#               data = ab_titers,
-#               start = c(log_beta0 = log(18.0), logit_beta1 = qlogis(0.15), phi_hat = qlogis(2/12),
-#                         logit_rho = qlogis(0.75), log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
-# # plot(intervals(m5))
-# # pairs(m5)
-
-m6 <- nlme(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal(time, vacc_month, log_beta0, logit_beta1, phi_hat,
-                                                                  logit_rho, log_r_1, log_r_2),
-           data = ab_titers,
-           fixed = log_beta0 + logit_beta1 + phi_hat + logit_rho + log_r_1 + log_r_2 ~ 1,
+           fixed = log_beta0 + logit_beta1 + phi_hat + log_r_1 + log_r_2 + logit_rho ~ 1,
            random = pdDiag(log_beta0 + log_r_1 + log_r_2 ~ 1),
-           groups = ~subject,
            start = c(log_beta0 = log(18.0), logit_beta1 = qlogis(0.1), phi_hat = qlogis(1/12),
-                     logit_rho = qlogis(0.75), log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650)))
-# m6.alt <- nlme(log(value) ~ calculate_ab_titers_LOG_postOnly_seasonal_r2const(time, vacc_month, log_beta0, logit_beta1,
-#                                                                               phi_hat, logit_rho, log_r_1),
-#            data = ab_titers,
-#            fixed = log_beta0 + logit_beta1 + phi_hat + logit_rho + log_r_1 ~ 1,
-#            random = pdDiag(log_beta0 + log_r_1 ~ 1),
-#            groups = ~subject,
-#            start = c(log_beta0 = log(18.0), logit_beta1 = qlogis(0.1), phi_hat = qlogis(1/12),
-#                      logit_rho = qlogis(0.75), log_r_1 = log(log(2)/30)))
-# m6.alt <- nlme(m5, random = pdDiag(log_beta0 + log_r_1 + log_r_2 ~ 1))
-
-plot(m6)
-pairs(m6)
-qqnorm(m6, abline = c(0, 1))
-
-# rand_effects <- ranef(m6)
-# rand_effects$subject <- rownames(rand_effects)
-# rand_effects <- merge(rand_effects, unique(ab_titers[, c('subject', 'vacc_month')]), by = 'subject')
-# plot(rand_effects)
-
-# Optimize/fine-tune model fit ----------------------------------------------------------------------------------------
-
-# Do we need random effect of r2?:
-m7 <- update(m6, random = pdDiag(log_beta0 + log_r_1 ~ 1))
-anova(m6, m7)
-rm(m7)
-
-# # Try to account for any correlation structure?:
-# plot(ACF(m3, maxLag = 10), alpha = 0.05) # seems to be some autocorrelation?
-# m4 <- update(m3, correlation = corAR1(abs(ACF(m3)[2, 2])))
-# anova(m3, m4) # doesn't significantly improve fit (close for 250/2)
-# # viz_model_fit(m4, ab_titers, logscale = TRUE)
-# rm(m4)
-# 
-# # What about variance functions?:
-# m4 <- update(m3, weights = varPower(form = ~log(value)))
-# anova(m3, m4)
-# plot(m4, resid(.) ~ log(value), abline = 0)
-# # seems to improve for some (more likely when more timepoints/participants), but don't see much visual evidence
-
-# Get and output results ----------------------------------------------------------------------------------------------
-
-# Now extract parameter fits and random effect sds:
-results.df <- get_param_est(m6, seasonal = TRUE)
-print(results.df)
-
-# if (!dir.exists(paste0('results/PRELIM_nlme_res_', ymd, '/'))) {
-#   dir.create(paste0('results/PRELIM_nlme_res_', ymd, '/'))
-# }
-# 
-# write.csv(results.df, file = paste0('results/PRELIM_nlme_res_', ymd, '/res_n', n_participants, '_t',
-#                                     sample_interval, '.csv'),
-#           row.names = FALSE)
+                     log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650), logit_rho = qlogis(0.75)))
+    )
+  }
+  
+  # If more than 10 extra trys, give up and move to next iteration:
+  if (class(m2)[1] == 'try-error') next
+  
+  # Review model diagnostics:
+  if (noisy) {
+    print(plot(m2))
+    print(qqnorm(m2, abline = c(0, 1)))
+    print(pairs(m2))
+    if (class(m1)[1] != 'try-error' & counter == 0) print(anova(m1, m2))
+  }
+  
+  # Do we need random effect of r2?:
+  m3 <- update(m2, random = pdDiag(log_beta0 + log_r_1 ~ 1))
+  if (noisy) print(anova(m2, m3))
+  
+  # Extract parameter fits and random effect sds:
+  results.df <- get_param_est(m2, seasonal = TRUE)
+  if (noisy) print(results.df)
+  
+  if (!dir.exists('results/')) {
+    dir.create('results/')
+  }
+  if (!dir.exists('results/ab_kinetics_res/')) {
+    dir.create('results/ab_kinetics_res/')
+  }
+  
+  write.csv(results.df, file = paste0('results/ab_kinetics_res/res_n', n, '.csv'))#, row.names = FALSE)
+  
+  # Clean up:
+  rm(m1, m2, m3)
+}
 
 # Potentially useful references ---------------------------------------------------------------------------------------
 
 # https://stackoverflow.com/questions/26449969/backward-selection-in-lme-singularity-in-backsolve-occured
 # https://stackoverflow.com/questions/50505290/singularity-in-backsolve-at-level-0-block-1-in-lme-model
 
-# Alternative fitting methods -----------------------------------------------------------------------------------------
-
-# # saemix:
-# ab_titers$logvalue <- log(ab_titers$value)
-# library(saemix)
-# 
-# ab_mix <- saemixData(name.data = ab_titers, name.group = 'subject', name.predictors = c('time', 'vacc_month'),
-#                      name.response = 'logvalue')
-# 
-# ab_mod <- function(psi, id, xidep) {
-#   time <- xidep[, 1]
-#   v_time <- xidep[, 2]
-# 
-#   log_beta0 <- psi[id, 1]
-#   logit_beta1 <- qlogis(psi[id, 2])
-#   phi_hat <- psi[id, 3]
-#   logit_rho <- qlogis(psi[id, 4])
-#   log_r_1 <- psi[id, 5]
-#   log_r_2 <- psi[id, 6]
-# 
-#   logvalue <- calculate_ab_titers_LOG_postOnly_seasonal(time, v_time, log_beta0, logit_beta1, phi_hat, logit_rho,
-#                                                         log_r_1, log_r_2)
-#   return(logvalue)
-# }
-# 
-# saemix_model <- saemixModel(model = ab_mod,
-#                             psi0 = matrix(c(log(18.0), 0.1, qlogis(2/12), 0.75, log(log(2)/30), log(log(2)/3650)),
-#                                           ncol = 6,
-#                                           byrow = TRUE,
-#                                           dimnames = list(NULL, c('log_beta0', 'logit_beta1', 'phi_hat',
-#                                                                   'logit_rho', 'log_r_1', 'log_r_2'))),
-#                             transform.par = c(0, 3, 0, 3, 0, 0),
-#                             fixed.estim = c(1, 1, 1, 1, 1, 1),
-#                             covariance.model = matrix(c(1, 0, 0, 0, 1, 0,
-#                                                         0, 0, 0, 0, 0, 0,
-#                                                         0, 0, 0, 0, 0, 0,
-#                                                         0, 0, 0, 0, 0, 0,
-#                                                         1, 0, 0, 0, 1, 0,
-#                                                         0, 0, 0, 0, 0, 0),
-#                                                       ncol = 6, byrow = TRUE))
-# 
-# opt <- list(seed = 94352514, save = FALSE, save.graphs = FALSE, nbiter.saemix = c(500, 200), maxim.maxiter = 200)
-# m8 <- saemix(saemix_model, ab_mix, opt)
-# summary(m8)
-
-# # brms:
-# ab_titers$logvalue <- log(ab_titers$value)
-# library(brms)
-# f1 <- logvalue ~ log(exp(logbeta) * ((exp(logitrho) / (exp(logitrho) + 1)) * (exp(-exp(logr1) * (time - 14))) +
-#                                        (1 - exp(logitrho) / (exp(logitrho) + 1)) * (exp(-exp(logr2) * (time - 14)))))
-# prior_1 <- c(set_prior("normal(log(18.0), 0.1)", nlpar = 'logbeta'),
-#              set_prior("normal(log(0.75 / (1 - 0.75)), 0.05)", nlpar = 'logitrho'),
-#              set_prior("normal(log(log(2)/30), 0.1)", nlpar = 'logr1'),
-#              set_prior("normal(log(log(2)/3650), 0.1)", nlpar = 'logr2'))
-# form = bf(f1, nl = TRUE) + list(logitrho~1,
-#                                 logbeta~(1|2|subject), logr1~(1|2|subject), logr2~(1|2|subject))
-# m4 <- brm(form, data = ab_titers, prior = prior_1)
-# summary(m4)
-
 # Clean up ------------------------------------------------------------------------------------------------------------
 
 rm(list = ls())
-dev.off()
+# dev.off()
