@@ -32,6 +32,9 @@ format_synth_data <- function(dat, vacc_dat, n_participants, t_samples) {
   # Set time of vaccine = time 0:
   dat$time <- dat$time - 365
   
+  # Convert to grouped data object:
+  dat <- groupedData(value ~ time | subject, data = dat, outer = ~vacc_month)
+  
   # Return formatted "data":
   return(dat)
 }

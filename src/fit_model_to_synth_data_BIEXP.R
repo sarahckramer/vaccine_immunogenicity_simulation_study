@@ -59,7 +59,6 @@ for (n in n_participants) {
          data = ab_titers,
          fixed = log_beta + log_r_1 + log_r_2 + logit_rho ~ 1,
          random = pdDiag(log_beta + log_r_1 + log_r_2 ~ 1),
-         groups = ~subject,
          start = c(log_beta = log(18.0), log_r_1 = log(log(2)/30),
                    log_r_2 = log(log(2)/3650), logit_rho = qlogis(0.75)))
   )
@@ -79,7 +78,6 @@ for (n in n_participants) {
          data = ab_titers,
          fixed = log_beta0 + logit_beta1 + phi_hat + log_r_1 + log_r_2 + logit_rho ~ 1,
          random = pdDiag(log_beta0 + log_r_1 + log_r_2 ~ 1),
-         groups = ~subject,
          start = c(log_beta0 = log(18.0), logit_beta1 = qlogis(0.1), phi_hat = qlogis(1/12),
                    log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650), logit_rho = qlogis(0.75)))
   )
@@ -98,7 +96,6 @@ for (n in n_participants) {
            data = ab_titers,
            fixed = log_beta0 + logit_beta1 + phi_hat + log_r_1 + log_r_2 + logit_rho ~ 1,
            random = pdDiag(log_beta0 + log_r_1 + log_r_2 ~ 1),
-           groups = ~subject,
            start = c(log_beta0 = log(18.0), logit_beta1 = qlogis(0.1), phi_hat = qlogis(1/12),
                      log_r_1 = log(log(2)/30), log_r_2 = log(log(2)/3650), logit_rho = qlogis(0.75)))
     )
